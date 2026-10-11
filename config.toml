@@ -1,0 +1,14 @@
+[[models]]
+repo_id = "Qwen/Qwen3-8B"
+revision = "b968826d9c46dd6066d109eabc6255188de91218"
+local_dir = "./models"
+[[models]]
+repo_id = "Qwen/Qwen3-Embedding-0.6B"
+revision = "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3"
+local_dir = "./models"
+[[datasets]]
+repo_id = "hotpotqa/hotpot_qa"
+revision = "1908d6afbbead072334abe2965f91bd2709910ab"
+name = "distractor"
+split = "validation[:300]"
+local_dir = "./datasets"
