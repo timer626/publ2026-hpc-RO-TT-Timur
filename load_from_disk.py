@@ -23,7 +23,7 @@ class DatasetHF:
         return dataset
     
         
-def load_data_from_disk():
+def load_from_disk():
     models = settings.models
     datasets = settings.datasets
     models_loaded = {}
@@ -48,4 +48,4 @@ if __name__=="__main__":
     if settings.constants.dev:
         logging.info("Приложение в dev режиме")
     else:
-        models_loaded,datasets_loaded = load_data_from_disk()
+        models_loaded,datasets_loaded = load_from_disk()

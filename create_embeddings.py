@@ -16,8 +16,7 @@ logging.basicConfig(level=logging.INFO,format="%(asctime)s | %(levelname)s | %(n
 logger = logging.getLogger(__name__)
 
 class Documents:
-    def __init__(self,settings):
-        models_loaded,datasets_loaded = load_data_from_disk()
+    def __init__(self,models_loaded,datasets_loaded,settings):
         self.output_file_documents = Path(settings.embeddings.local_file_documents)
         self.output_index_file_documents = Path(settings.embeddings.local_index_file_documents)
         self.output_file_embeddings = Path(settings.constants.local_file_embeddings)
@@ -94,8 +93,8 @@ class Documents:
         logging.info(f"Документы подготовлены для генерации")
         
                 
-def main():
-    docs = Documents(settings)
+def create_embeddings(models_loaded,datasets_loaded,settings):
+    docs = Documents(models_loaded,datasets_loaded,settings)
     docs.prepare()
  
     
@@ -104,5 +103,5 @@ if __name__=="__main__":
     if settings.constants.dev:
         logging.info("Приложение работает в dev режиме")
     else:
-        main()
+        create_embeddings()
         
