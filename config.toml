@@ -12,3 +12,12 @@ revision = "1908d6afbbead072334abe2965f91bd2709910ab"
 name = "distractor"
 split = "validation[:300]"
 local_dir = "./datasets"
+
+[embeddings]
+local_file_documents = "./datasets/hotpot_qa_documents/documents.jsonl"
+local_index_file_documents = "./datasets/hotpot_qa_documents/documents.json"
+
+
+[constants]
+dev = true
+device_cuda = true
