@@ -12,12 +12,15 @@ class ModelConfig(BaseModel):
 
 class DatasetConfig(BaseModel):
     repo_id: str
-    model_name:str
+    dataset_name:str
     revision: str
     name: str
     split: str
     local_dir: str
-class EmbeddingConfig:
+
+class LogConfig(BaseModel):
+    local_dir: str
+class EmbeddingConfig(BaseModel):
     model_name: str
     local_file_documents:str
     local_index_file_documents:str
@@ -35,6 +38,7 @@ class ConstantConfig(BaseModel):
 class Settings(BaseModel):
     models: list[ModelConfig]
     datasets: list[DatasetConfig]
+    logs: LogConfig
     embeddings: EmbeddingConfig
     constants: ConstantConfig
 
