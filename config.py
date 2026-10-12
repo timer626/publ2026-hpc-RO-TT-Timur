@@ -22,8 +22,10 @@ class LogConfig(BaseModel):
     local_dir: str
 class EmbeddingConfig(BaseModel):
     model_name: str
+    local_dir:str
     local_file_documents:str
     local_index_file_documents:str
+    local_file_embeddings:str
     
     
 class ConstantConfig(BaseModel):
@@ -34,6 +36,7 @@ class ConstantConfig(BaseModel):
     batch_size: int
     padding: bool
     truncation: bool
+    marker_file: str
 
 class Settings(BaseModel):
     models: list[ModelConfig]

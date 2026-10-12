@@ -2,22 +2,23 @@
 repo_id = "Qwen/Qwen3-8B"
 model_name = "Qwen3-8B"
 revision = "b968826d9c46dd6066d109eabc6255188de91218"
-local_dir = "./models"
+local_dir = "./models/Qwen3-8B"
 [[models]]
 repo_id = "Qwen/Qwen3-Embedding-0.6B"
 model_name = "Qwen3-Embedding-0.6B"
 revision = "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3"
-local_dir = "./models"
+local_dir = "./models/Qwen3-Embedding-0.6B"
 [[datasets]]
 repo_id = "hotpotqa/hotpot_qa"
 dataset_name = "hotpot_qa"
 revision = "1908d6afbbead072334abe2965f91bd2709910ab"
 name = "distractor"
 split = "validation[:300]"
-local_dir = "./datasets"
+local_dir = "./datasets/hotpot_qa"
 
 [embeddings]
 model_name = "Qwen3-Embedding-0.6B"
+local_dir = "./datasets/hotpot_qa_documents"
 local_file_documents = "./datasets/hotpot_qa_documents/documents.jsonl"
 local_index_file_documents = "./datasets/hotpot_qa_documents/documents.json"
 local_file_embeddings = "./datasets/hotpot_qa_documents/documents.npy"
@@ -34,3 +35,4 @@ max_length = 8192
 batch_size = 60
 padding = true
 truncation = true
+marker_file = './marker_download.json'

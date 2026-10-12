@@ -31,16 +31,14 @@ def load_data_from_disk():
     for model in models:
         local_dir = model.local_dir
         model_name = model.model_name
-        local_files = local_dir+'/'+model_name
-        models_loaded[model_name] = ModelTransformers(local_files)
-        logging.info(f"{local_files} loaded to memory")
+        models_loaded[model_name] = ModelTransformers(local_dir)
+        logging.info(f"{local_dir} loaded to memory")
     logging.info('All models loaded to memory')
     for dataset in datasets:
         local_dir = dataset.local_dir
         dataset_name = dataset.dataset_name
-        local_files = local_dir+'/'+dataset_name
-        datasets_loaded[dataset_name] = DatasetHF(local_files)
-        logging.info(f"{local_files} loaded to memory")
+        datasets_loaded[dataset_name] = DatasetHF(local_dir)
+        logging.info(f"{local_dir} loaded to memory")
     logging.info('All datasets loaded to memory')
     return models_loaded,datasets_loaded
         
