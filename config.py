@@ -1,34 +1,39 @@
+import logging
 import tomllib
 from pathlib import Path
+
 from pydantic import BaseModel
-import logging
 
 logger = logging.getLogger(__name__)
 
-class ModelConfig(BaseModel):
+class GeneratorConfig(BaseModel):
     repo_id: str
     model_name: str
     revision: str
-    local_dir: str
+    local_dir: Path
 
-class DatasetConfig(BaseModel):
+class DatasetRawConfig(BaseModel):
     repo_id: str
     dataset_name:str
     revision: str
     name: str
     split: str
-    local_dir: str
+    local_dir: Path
+class DatasetPreparedConfig(BaseModel):
+    local_dir: Path
+    local_file_documents: Path
+    local_index_file_documents: Path
+    local_file_embeddings: Path
+    
+class EmbeddingConfig(BaseModel):
+    repo_id: str
+    model_name: str
+    revision: str
+    local_dir: Path 
 
 class LogConfig(BaseModel):
-    local_dir: str
-class EmbeddingConfig(BaseModel):
-    model_name: str
-    local_dir:str
-    local_file_documents:str
-    local_index_file_documents:str
-    local_file_embeddings:str
-    
-    
+    local_dir: Path
+ 
 class ConstantConfig(BaseModel):
     dev: bool
     device_cuda: bool
@@ -37,35 +42,36 @@ class ConstantConfig(BaseModel):
     batch_size: int
     padding: bool
     truncation: bool
-    local_marker_file: str
+    is_first_run: bool
 
 class Settings(BaseModel):
-    models: list[ModelConfig]
-    datasets: list[DatasetConfig]
+    generator: GeneratorConfig
+    dataset_raw: DatasetRawConfig
+    dataset_prepared: DatasetPreparedConfig
+    embedding: EmbeddingConfig
     logs: LogConfig
-    embeddings: EmbeddingConfig
     constants: ConstantConfig
 
-def resolve_path(path:str,project_root_absolute:Path):
-    path = Path(path)
-    path = project_root_absolute / path
-    return path.resolve()
+def resolve_path(path: Path, project_root: Path) -> Path:
+    return (project_root / path).resolve()
 
 
-def get_settings(project_root:Path):
-    config_path = project_root/Path(r'./configs/config.toml')
+def get_settings(project_root: Path) -> Settings:
+    config_path = project_root / "configs" / "config.toml"
     config_data = tomllib.loads(config_path.read_text(encoding="utf-8"))
     settings = Settings(**config_data)
-    for model in settings.models:
-        model.local_dir = resolve_path(model.local_dir,project_root)
-    for dataset in settings.datasets:
-        dataset.local_dir = resolve_path(dataset.local_dir,project_root)
+    settings.generator.local_dir = resolve_path(settings.generator.local_dir, project_root)
+    settings.dataset_raw.local_dir = resolve_path(settings.dataset_raw.local_dir, project_root)
+    settings.dataset_prepared.local_dir = resolve_path(settings.dataset_prepared.local_dir, project_root)
+    settings.dataset_prepared.local_file_documents = resolve_path(settings.dataset_prepared.local_file_documents, project_root)
+    settings.dataset_prepared.local_index_file_documents = resolve_path(settings.dataset_prepared.local_index_file_documents, project_root)
+    settings.dataset_prepared.local_file_embeddings = resolve_path(settings.dataset_prepared.local_file_embeddings, project_root)
+    settings.embedding.local_dir = resolve_path(settings.embedding.local_dir, project_root)
     settings.logs.local_dir = resolve_path(settings.logs.local_dir, project_root)
-    settings.embeddings.local_dir = resolve_path(settings.embeddings.local_dir, project_root)
-    settings.embeddings.local_file_documents = resolve_path(settings.embeddings.local_file_documents, project_root)
-    settings.embeddings.local_index_file_documents = resolve_path(settings.embeddings.local_index_file_documents, project_root)
-    settings.embeddings.local_file_embeddings = resolve_path(settings.embeddings.local_file_embeddings, project_root)
-    settings.constants.local_marker_file = resolve_path(settings.constants.local_marker_file, project_root)
+    
     logger.info(f"Настройки из {str(config_path)} загружены")
 
     return settings
+if __name__=="__main__":
+    project_root = Path(__file__).resolve().parent
+    get_settings(project_root)

@@ -7,14 +7,17 @@ requires-python = "==3.13.16"
 dependencies = [
     "datasets==5.1.0",
     "huggingface-hub==2.2.0",
+    "matplotlib>=3.11.2",
     "pydantic==2.14.1",
     "python-dotenv==1.2.4",
     "torch==2.14.1",
     "transformers==5.19.0",
+    "ttpy[fast]",
 ]
 
 [tool.uv.sources]
 torch = { index = "pytorch-cu132" }
+ttpy = { git = "https://github.com/oseledets/ttpy" }
 
 [[tool.uv.index]]
 name = "pytorch-cu132"

@@ -12,15 +12,12 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 class Documents:
-    def __init__(self,models_loaded,datasets_loaded,settings):
-        self.output_file_documents = settings.embeddings.local_file_documents
-        self.output_index_file_documents = settings.embeddings.local_index_file_documents
-        self.output_file_embeddings = settings.embeddings.local_file_embeddings
-        dataset_name= (settings.datasets[0]).dataset_name
-        self.dataset = datasets_loaded.get(dataset_name,None)
-        embedder = models_loaded.get(settings.embeddings.model_name,None)
-        self.tokenizer,self.model = embedder['tokenizer'], embedder['model']
-        
+    def __init__(self,data_embeddings,settings):
+        self.data_embeddings = data_embeddings
+        self.dataset = data_embeddings['dataset']
+        self.output_file_documents = settings.dataset_prepared.local_file_documents
+        self.output_index_file_documents = settings.dataset_prepared.local_index_file_documents
+        self.output_file_embeddings = settings.dataset_prepared.local_file_embeddings
         self.device = 'cuda' if (settings.constants.device_cuda and torch.cuda.is_available()) else 'cpu'
         self.max_length = settings.constants.max_length
         self.batch_size = settings.constants.batch_size
@@ -51,8 +48,7 @@ class Documents:
             json.dump(dict(index),f,ensure_ascii=False)
         logger.info(f'Индекс для документов сохранен в {str(self.output_index_file_documents)} ')
     
-    def last_token_pool(self,last_hidden_states: Tensor,
-                 attention_mask: Tensor) -> Tensor:
+    def last_token_pool(self,last_hidden_states: Tensor,attention_mask: Tensor) -> Tensor:
         left_padding = (attention_mask[:, -1].sum() == attention_mask.shape[0])
         if left_padding:
             return last_hidden_states[:, -1]
@@ -62,20 +58,21 @@ class Documents:
             return last_hidden_states[torch.arange(batch_size, device=last_hidden_states.device), sequence_lengths]
     
     def make_embeddings(self):
-        
-        self.model = self.model.to(self.device)
-        self.model.eval()
+        tokenizer = self.data_embeddings['tokenizer']
+        model = self.data_embeddings['model']
+        model = model.to(self.device)
+        model.eval()
         all_embeddings = []
         for start in range(0,len(self.documents),self.batch_size):
             batch_documents = self.documents[start:start + self.batch_size]
             texts = [doc["text"] for doc in batch_documents]
-            inputs = self.tokenizer(texts,
+            inputs = tokenizer(texts,
                                     padding=self.padding,
                                     truncation=self.truncation,
                                     max_length=self.max_length,
                                     return_tensors="pt",).to(self.device)
             with torch.inference_mode():
-                outputs = self.model(**inputs)
+                outputs = model(**inputs)
                 embeddings = self.last_token_pool(outputs.last_hidden_state,inputs["attention_mask"])
                 embeddings = F.normalize(embeddings.float(),p=2,dim=1)
             all_embeddings.append(embeddings.cpu().numpy())
@@ -90,8 +87,8 @@ class Documents:
         logger.info(f"Документы подготовлены для генерации")
         
                 
-def create_embeddings(models_loaded,datasets_loaded,settings):
-    docs = Documents(models_loaded,datasets_loaded,settings)
+def create_embeddings(data_embeddings,settings):
+    docs = Documents(data_embeddings,settings)
     docs.prepare()
  
     
