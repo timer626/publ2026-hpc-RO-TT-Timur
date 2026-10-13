@@ -1,26 +1,23 @@
-from config import settings
 import logging
 
 import torch
 import torch.nn.functional as F
 
 from torch import Tensor
-from load_from_disk import load_data_from_disk
-from pathlib import Path
 import json
 
 from collections import defaultdict
 import numpy as np
 
-logging.basicConfig(level=logging.INFO,format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 logger = logging.getLogger(__name__)
 
 class Documents:
     def __init__(self,models_loaded,datasets_loaded,settings):
-        self.output_file_documents = Path(settings.embeddings.local_file_documents)
-        self.output_index_file_documents = Path(settings.embeddings.local_index_file_documents)
-        self.output_file_embeddings = Path(settings.constants.local_file_embeddings)
-        self.dataset = datasets_loaded.get(settings.datasets.dataset_name,None)
+        self.output_file_documents = settings.embeddings.local_file_documents
+        self.output_index_file_documents = settings.embeddings.local_index_file_documents
+        self.output_file_embeddings = settings.embeddings.local_file_embeddings
+        dataset_name= (settings.datasets[0]).dataset_name
+        self.dataset = datasets_loaded.get(dataset_name,None)
         embedder = models_loaded.get(settings.embeddings.model_name,None)
         self.tokenizer,self.model = embedder['tokenizer'], embedder['model']
         
@@ -44,7 +41,7 @@ class Documents:
         with open(self.output_file_documents,'w',encoding='UTF-8') as f:
             for doc in self.documents:
                 f.write(json.dumps(doc, ensure_ascii=False) + "\n")
-        logging.info(f'Документы сохранены в {str(self.output_file_documents)} ')
+        logger.info(f'Документы сохранены в {str(self.output_file_documents)} ')
 
     def build_document_index(self) -> dict[str, list[int]]:
         index = defaultdict(list)
@@ -52,7 +49,7 @@ class Documents:
             index[doc["example_id"]].append(i)
         with open(self.output_index_file_documents,'w',encoding='UTF-8') as f:
             json.dump(dict(index),f,ensure_ascii=False)
-        logging.info(f'Индекс для документов сохранен в {str(self.output_index_file_documents)} ')
+        logger.info(f'Индекс для документов сохранен в {str(self.output_index_file_documents)} ')
     
     def last_token_pool(self,last_hidden_states: Tensor,
                  attention_mask: Tensor) -> Tensor:
@@ -84,13 +81,13 @@ class Documents:
             all_embeddings.append(embeddings.cpu().numpy())
         embeddings = np.concatenate(all_embeddings, axis=0)
         np.save(self.output_file_embeddings, embeddings)
-        logging.info(f"Эмбеддинги документов сохранены в {str(self.output_file_embeddings)}")
+        logger.info(f"Эмбеддинги документов сохранены в {str(self.output_file_embeddings)}")
     
     def prepare(self):
         self.make_documents()
         self.build_document_index()
         self.make_embeddings()
-        logging.info(f"Документы подготовлены для генерации")
+        logger.info(f"Документы подготовлены для генерации")
         
                 
 def create_embeddings(models_loaded,datasets_loaded,settings):
@@ -100,8 +97,4 @@ def create_embeddings(models_loaded,datasets_loaded,settings):
     
 
 if __name__=="__main__":
-    if settings.constants.dev:
-        logging.info("Приложение работает в dev режиме")
-    else:
-        create_embeddings()
-        
+    pass

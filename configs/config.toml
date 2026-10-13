@@ -35,4 +35,4 @@ max_length = 8192
 batch_size = 60
 padding = true
 truncation = true
-marker_file = './marker_download.json'
+local_marker_file = './marker_download.json'

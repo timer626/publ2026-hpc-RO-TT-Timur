@@ -1,14 +1,15 @@
 import tomllib
 from pathlib import Path
-
 from pydantic import BaseModel
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ModelConfig(BaseModel):
     repo_id: str
     model_name: str
     revision: str
     local_dir: str
-
 
 class DatasetConfig(BaseModel):
     repo_id: str
@@ -36,7 +37,7 @@ class ConstantConfig(BaseModel):
     batch_size: int
     padding: bool
     truncation: bool
-    marker_file: str
+    local_marker_file: str
 
 class Settings(BaseModel):
     models: list[ModelConfig]
@@ -45,5 +46,26 @@ class Settings(BaseModel):
     embeddings: EmbeddingConfig
     constants: ConstantConfig
 
-config_data = tomllib.loads(Path(r"./config.toml").read_text(encoding="utf-8"))
-settings = Settings(**config_data)
+def resolve_path(path:str,project_root_absolute:Path):
+    path = Path(path)
+    path = project_root_absolute / path
+    return path.resolve()
+
+
+def get_settings(project_root:Path):
+    config_path = project_root/Path(r'./configs/config.toml')
+    config_data = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    settings = Settings(**config_data)
+    for model in settings.models:
+        model.local_dir = resolve_path(model.local_dir,project_root)
+    for dataset in settings.datasets:
+        dataset.local_dir = resolve_path(dataset.local_dir,project_root)
+    settings.logs.local_dir = resolve_path(settings.logs.local_dir, project_root)
+    settings.embeddings.local_dir = resolve_path(settings.embeddings.local_dir, project_root)
+    settings.embeddings.local_file_documents = resolve_path(settings.embeddings.local_file_documents, project_root)
+    settings.embeddings.local_index_file_documents = resolve_path(settings.embeddings.local_index_file_documents, project_root)
+    settings.embeddings.local_file_embeddings = resolve_path(settings.embeddings.local_file_embeddings, project_root)
+    settings.constants.local_marker_file = resolve_path(settings.constants.local_marker_file, project_root)
+    logger.info(f"Настройки из {str(config_path)} загружены")
+
+    return settings
