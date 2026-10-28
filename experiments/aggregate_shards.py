@@ -30,6 +30,13 @@ def average(rows: list[dict[str, Any]], key: str) -> float:
     return fmean(float(row[key]) for row in rows)
 
 
+def tt_setting(summary: dict[str, Any], key: str) -> Any:
+    cache = summary["kv_cache"]
+    if key == "prefill_block_size":
+        return cache.get(key, cache["generated_token_block_size"])
+    return cache[key]
+
+
 def paired_bootstrap_interval(
     baseline_rows: list[dict[str, Any]],
     tt_rows: list[dict[str, Any]],
@@ -100,7 +107,12 @@ def main() -> None:
             ("generation", ("revision", "max_new_tokens", "seed", "sampling")),
             ("kv_cache", ("epsilon", "generated_token_block_size", "prefill_block_size", "core_quantization")),
         ):
-            if any(summary[section][key] != reference_tt[section][key] for key in keys):
+            if any(
+                (tt_setting(summary, key) != tt_setting(reference_tt, key))
+                if section == "kv_cache"
+                else (summary[section][key] != reference_tt[section][key])
+                for key in keys
+            ):
                 raise ValueError(f"Несовместимые TT shards: {summary['run_id']}")
 
     retrieval_mismatches = 0
@@ -131,7 +143,7 @@ def main() -> None:
         "baseline_runs": [summary["run_id"] for summary, _ in baseline_runs],
         "tt_runs": [summary["run_id"] for summary, _ in tt_runs],
         "tt_settings": {
-            key: reference_tt["kv_cache"][key]
+            key: tt_setting(reference_tt, key)
             for key in ("epsilon", "generated_token_block_size", "prefill_block_size", "core_quantization")
         },
         "retrieval_mismatches": retrieval_mismatches,

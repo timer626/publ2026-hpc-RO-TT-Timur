@@ -1,0 +1,64 @@
+{
+  "experiment": "per_example_rag_baseline_without_kv_compression",
+  "run_id": "baseline_20261028T202312111376Z",
+  "dataset": {
+    "repo_id": "hotpotqa/hotpot_qa",
+    "revision": "1908d6afbbead072334abe2965f91bd2709910ab",
+    "config": "distractor",
+    "split": "validation[:300]",
+    "start_index": 0,
+    "end_index_exclusive": 50,
+    "examples_evaluated": 50
+  },
+  "retrieval": {
+    "scope": "documents indexed under the current example_id",
+    "top_k": 5,
+    "query_instruction": "Given a question, retrieve the passages from this example that contain evidence needed to answer it.",
+    "embedding_model_repo_id": "Qwen/Qwen3-Embedding-0.6B",
+    "embedding_model_revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+    "query_embedding_seconds": 0.6755754259647802,
+    "search_seconds": 0.0003795676166191697,
+    "recall_at_k": 0.9,
+    "precision_at_k": 0.37200000000000005,
+    "all_supporting_documents_retrieved_rate": 0.8
+  },
+  "generation": {
+    "model_repo_id": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "kv_cache_compression": "none",
+    "thinking_enabled": false,
+    "max_new_tokens": 64,
+    "seed": 42,
+    "seed_per_example": false,
+    "sampling": {
+      "do_sample": true,
+      "temperature": 0.7,
+      "top_p": 0.8,
+      "top_k": 20,
+      "min_p": 0.0
+    },
+    "latency_scope": "model.generate only; prompt tokenization excluded",
+    "answer_em": 0.5,
+    "answer_f1": 0.6514799253034548,
+    "mean_generation_seconds": 0.3924456161633134,
+    "generated_tokens_per_second": 17.989753762625885,
+    "mean_prompt_tokens": 739.8,
+    "mean_generated_tokens": 7.06
+  },
+  "performance": {
+    "device": "cuda",
+    "query_peak_cuda_memory_gb": 1.3750405311584473,
+    "generation_peak_cuda_memory_gb": 15.696702003479004
+  },
+  "software": {
+    "python": "3.13.16",
+    "torch": "2.14.1+cu132"
+  },
+  "artifacts": {
+    "predictions": "/qwarium/home/p.a.belozerova/tt-rag-kv-results/baseline_20261028T202312111376Z/predictions.jsonl",
+    "plots": {
+      "quality_metrics": "/qwarium/home/p.a.belozerova/tt-rag-kv-results/baseline_20261028T202312111376Z/plots/quality_metrics.png",
+      "generation_metrics": "/qwarium/home/p.a.belozerova/tt-rag-kv-results/baseline_20261028T202312111376Z/plots/generation_metrics.png"
+    }
+  }
+}

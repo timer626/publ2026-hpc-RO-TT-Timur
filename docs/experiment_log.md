@@ -301,6 +301,44 @@ improvement has been established for them yet.
 
 The next comparison uses `epsilon=0.1`, generated-token block 8, prefill
 blocks 128 and 256, and `int8` versus `int8_row` on the first 10 questions.
-Promising settings will be checked on a larger matched sample. The Qwarium
-environments on `hpc0n1` and `hpc0n3` are being recreated after their
-ephemeral `/tmp` files were cleared.
+Both Qwarium environments were recreated, including the pinned Qwen3-8B and
+embedding models. A two-layer synthetic Qwen3 CUDA generation test accepted
+both quantization modes with separate prefill and generation block sizes.
+
+The following runs use the first 10 questions, `top_k=5`, 64 maximum new
+tokens, and seed 42. The first four used `validation[:10]`; the last two used
+`validation[:300]`. Retrieved document lists matched across all six runs and
+also matched the earlier 10-question baseline. These are exploratory quality
+measurements on a small sample.
+
+| Node | Run suffix | Prefill block | Cores | EM | F1 | Gen s | Ratio | Error |
+| --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| hpc0n3 | `201929680481Z` | 128 | int8 | 0.500 | 0.686 | 7.426 | 1.877 | 0.0928 |
+| hpc0n3 | `201929517476Z` | 128 | int8_row | 0.600 | 0.786 | 7.643 | 1.867 | 0.0560 |
+| hpc0n1 | `201952617346Z` | 256 | int8 | 0.400 | 0.582 | 7.423 | 1.961 | 0.0930 |
+| hpc0n1 | `201952899454Z` | 256 | int8_row | 0.600 | 0.711 | 7.262 | 1.955 | 0.0555 |
+| hpc0n1 | `202323037012Z` | 64 | int8_row | 0.700 | 0.842 | 8.575 | 1.719 | 0.0575 |
+| hpc0n1 | `202323390884Z` | 128 | int8_row | 0.600 | 0.711 | 7.595 | 1.867 | 0.0560 |
+
+`int8_row` reduced mean relative reconstruction error compared with `int8`
+at the same prefill size. The repeated 128/int8_row runs had different F1
+despite identical retrieved document lists, so quality claims require the
+larger matched evaluation now in progress.
+
+The first 50-question pair used the same `validation[:300]` preparation on
+`hpc0n3` and seed 42 without per-example reseeding. All 50 retrieval lists
+matched. The baseline run `baseline_20261028T202312111376Z` reached EM 0.500,
+F1 0.6515, and mean generation time 0.392 s. The 128/int8_row TT run
+`baseline_tt_20261028T202311591140Z` reached EM 0.540, F1 0.6904,
+mean generation time 8.864 s, cache ratio 1.868, and mean relative
+reconstruction error 0.0559. The quality difference is exploratory; TT is
+still 22.6 times slower on this pair. A 300-question matched comparison with
+per-example seeds is in progress.
+
+The second 50-question pair used the same protocol on `hpc0n1`. Baseline
+`baseline_20261028T202555167463Z` reached EM 0.500, F1 0.6515, and
+0.398 s mean generation time. TT with prefill block 64 and `int8_row`, run
+`baseline_tt_20261028T202554756883Z`, reached EM 0.580, F1 0.7311,
+9.645 s mean generation time, cache ratio 1.720, and error 0.0574. All 50
+retrieval lists matched. This variant is slower and stores more data than
+prefill block 128; its higher 50-question F1 needs a larger confirmation.
