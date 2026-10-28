@@ -342,3 +342,31 @@ The second 50-question pair used the same protocol on `hpc0n1`. Baseline
 9.645 s mean generation time, cache ratio 1.720, and error 0.0574. All 50
 retrieval lists matched. This variant is slower and stores more data than
 prefill block 128; its higher 50-question F1 needs a larger confirmation.
+
+### Matched 300-question follow-up: prefill 128
+
+Four 75-question TT shards with `epsilon=0.1`, generated block 8, prefill
+block 128, and `int8_row` completed on the four H100 GPUs. Four baseline
+shards were prepared and run on the same nodes with the same dataset, retrieval,
+generation settings, and per-example seeds. The aggregator verified complete,
+nonoverlapping indices 0–299 and **zero retrieval mismatches**. Exact run IDs
+and paired intervals are in `full_300_int8_row_prefill128_comparison.json`.
+
+| Metric | Matched baseline | TT prefill 128, int8_row |
+| --- | ---: | ---: |
+| Answer EM | 0.4900 | 0.4767 |
+| Answer F1 | 0.6410 | 0.6218 |
+| Mean generation seconds | 0.3523 | 8.6981 |
+| Peak CUDA memory GiB | 15.696 | 15.446 |
+| Persistent cache payload ratio | — | 1.871 |
+| Mean relative reconstruction error | — | 0.0560 |
+
+The paired TT-minus-baseline difference is -0.0133 EM (95% paired bootstrap
+interval [-0.0433, 0.0167]) and -0.0193 F1 (interval [-0.0446, 0.0046]).
+The intervals include zero, so this run does not establish a quality difference
+at the chosen seed policy. TT remains 24.7 times slower than baseline in
+generation; its stored payload is smaller, while peak GPU memory remains near
+the dense-cache baseline because attention receives reconstructed K/V.
+
+The 50-question prefill-64 result warrants the same 300-question evaluation;
+that run is in progress with the four baseline shards above.
