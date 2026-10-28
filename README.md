@@ -87,8 +87,11 @@ uv run --no-sync python -m experiments.baseline
 uv run --no-sync python -m experiments.baseline --limit 10
 ```
 
-Доступны параметры `--top-k`, `--limit`, `--max-new-tokens`, `--seed` и
-`--output-dir`. Например:
+Доступны параметры `--top-k`, `--limit`, `--offset`, `--max-new-tokens`, `--seed`,
+`--seed-per-example` и `--output-dir`. `--offset` задаёт начальный индекс, а
+`--limit` — число примеров после него. С `--seed-per-example` каждый вопрос
+получает seed `seed + индекс`, поэтому непересекающиеся части выборки можно
+запускать параллельно. Например:
 
 ```powershell
 uv run --no-sync python -m experiments.baseline --limit 10 --top-k 5 --max-new-tokens 64
@@ -100,11 +103,14 @@ uv run --no-sync python -m experiments.baseline --limit 10 --top-k 5 --max-new-t
 uv run --no-sync python -m experiments.baseline_tt
 ```
 
-Параметры `--top-k`, `--limit`, `--max-new-tokens`, `--seed` и `--output-dir`
+Параметры `--top-k`, `--limit`, `--offset`, `--max-new-tokens`, `--seed`,
+`--seed-per-example` и `--output-dir`
 работают так же, как в исходном baseline. Дополнительно доступны:
 
 - `--tt-epsilon` — точность TT-SVD, по умолчанию `0.01`;
 - `--tt-block-size` — число токенов в TT-блоке, по умолчанию `16`.
+- `--tt-core-quantization int8` — экспериментальное симметричное 8-битное
+  хранение TT-ядер с отдельным масштабом для каждого ядра; по умолчанию `none`.
 
 Например:
 
@@ -116,6 +122,11 @@ TT-ядра и неполный плотный блок хранятся на CP
 восстанавливается в плотные K/V на устройстве модели. Поэтому compression ratio
 описывает размер сохранённого cache и сам по себе не равен снижению пиковой
 памяти GPU или ускорению генерации.
+
+TT-SVD выполняет много разложений небольших матриц. При запуске
+`baseline_tt.py` число потоков BLAS по умолчанию ограничено одним: на H100
+это заметно сократило время разложений. Значения `OPENBLAS_NUM_THREADS`,
+`OMP_NUM_THREADS` и `MKL_NUM_THREADS`, заданные до запуска, сохраняются.
 
 ## Результаты
 
@@ -131,6 +142,15 @@ TT-ядра и неполный плотный блок хранятся на CP
   восстановления, TT-rank и время обработки (только TT-эксперимент).
 
 Каталог результатов можно переопределить параметром `--output-dir`.
+Для объединения запусков с `--seed-per-example` используйте
+`python -m experiments.aggregate_shards --baseline PATH/summary.json --tt
+PATH1/summary.json PATH2/summary.json --output-dir PATH`. Скрипт проверяет
+покрытие индексов и сохраняет `comparison.json` и общий `tt_predictions.jsonl`.
+
+Опубликованные прогоны находятся в `experiments/results/`: сырые предсказания,
+JSON-сводки и графики сохранены по узлам и конфигурациям. Сводка парного
+сравнения 300 вопросов — в `docs/full_300_comparison.json`, ход экспериментов
+и ограничения результатов — в `docs/experiment_log.md`.
 
 ## Структура проекта
 

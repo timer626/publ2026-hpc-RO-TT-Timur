@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+import os
+
+# TT-SVD repeatedly decomposes small matrices. Large BLAS thread pools add
+# substantial overhead; callers can override these defaults in their shell.
+for _thread_variable in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_thread_variable, "1")
+
 import argparse
 import json
 import logging
@@ -48,6 +55,12 @@ def parse_args() -> argparse.Namespace:
         help="Optionally evaluate only the first N examples.",
     )
     parser.add_argument(
+        "--offset",
+        type=int,
+        default=0,
+        help="Start at this zero-based dataset index (default: 0).",
+    )
+    parser.add_argument(
         "--max-new-tokens",
         type=int,
         default=64,
@@ -60,6 +73,11 @@ def parse_args() -> argparse.Namespace:
         help="Random seed used for generation (default: 42).",
     )
     parser.add_argument(
+        "--seed-per-example",
+        action="store_true",
+        help="Seed each example with seed plus its dataset index for shard-safe runs.",
+    )
+    parser.add_argument(
         "--tt-epsilon",
         type=float,
         default=1e-2,
@@ -70,6 +88,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=16,
         help="Generated KV tokens per TT block (default: 16).",
+    )
+    parser.add_argument(
+        "--tt-core-quantization",
+        choices=("none", "int8"),
+        default="none",
+        help="Optional TT-core storage quantization (default: none).",
     )
     parser.add_argument(
         "--output-dir",
@@ -88,6 +112,7 @@ def generate_answer_with_tt_cache(
     max_new_tokens: int,
     tt_epsilon: float,
     tt_block_size: int,
+    tt_core_quantization: str,
 ) -> tuple[str, int, int, float, dict[str, int | float]]:
     prompt = build_generation_prompt(tokenizer, question, documents)
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
@@ -96,6 +121,7 @@ def generate_answer_with_tt_cache(
         config=model.config,
         epsilon=tt_epsilon,
         block_size=tt_block_size,
+        core_quantization=tt_core_quantization,
     )
 
     if device.type == "cuda":
@@ -135,6 +161,8 @@ def validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--top-k должен быть больше нуля")
     if args.limit is not None and args.limit <= 0:
         raise ValueError("--limit должен быть больше нуля")
+    if args.offset < 0:
+        raise ValueError("--offset не может быть отрицательным")
     if args.max_new_tokens <= 0:
         raise ValueError("--max-new-tokens должен быть больше нуля")
     if not 0.0 < args.tt_epsilon < 1.0:
@@ -158,8 +186,11 @@ def main() -> None:
     dataset, document_index, document_embeddings, documents = load_retrieval_data(
         settings
     )
-    if args.limit is not None:
-        dataset = dataset.select(range(min(args.limit, len(dataset))))
+    end_index = min(
+        args.offset + args.limit if args.limit is not None else len(dataset),
+        len(dataset),
+    )
+    dataset = dataset.select(range(args.offset, end_index))
     examples = list(dataset)
     if not examples:
         raise ValueError("В выбранном наборе данных нет примеров для оценки")
@@ -228,6 +259,9 @@ def main() -> None:
     with predictions_path.open("w", encoding="utf-8") as predictions_file:
         for row_number, retrieved_example in enumerate(retrieved_examples, start=1):
             example = retrieved_example["example"]
+            example_index = args.offset + row_number - 1
+            if args.seed_per_example:
+                set_seed(args.seed + example_index)
             (
                 prediction,
                 prompt_tokens,
@@ -243,12 +277,14 @@ def main() -> None:
                 args.max_new_tokens,
                 args.tt_epsilon,
                 args.tt_block_size,
+                args.tt_core_quantization,
             )
             answer_metrics = evaluate_answer(prediction, example["answer"])
             retrieval_metrics = retrieved_example["retrieval_metrics"]
 
             result = {
                 "id": example["id"],
+                "example_index": example_index,
                 "question": example["question"],
                 "reference_answer": example["answer"],
                 "prediction": prediction,
@@ -343,6 +379,8 @@ def main() -> None:
             "revision": settings.dataset_raw.revision,
             "config": settings.dataset_raw.name,
             "split": settings.dataset_raw.split,
+            "start_index": args.offset,
+            "end_index_exclusive": end_index,
             "examples_evaluated": len(examples),
         },
         "retrieval": {
@@ -366,6 +404,7 @@ def main() -> None:
             "thinking_enabled": False,
             "max_new_tokens": args.max_new_tokens,
             "seed": args.seed,
+            "seed_per_example": args.seed_per_example,
             "sampling": {
                 "do_sample": True,
                 "temperature": 0.7,
@@ -406,6 +445,7 @@ def main() -> None:
             ),
             "epsilon": args.tt_epsilon,
             "generated_token_block_size": args.tt_block_size,
+            "core_quantization": args.tt_core_quantization,
             "storage_policy": (
                 "compress prompt prefill and complete generated-token blocks; "
                 "keep the newest incomplete block dense"

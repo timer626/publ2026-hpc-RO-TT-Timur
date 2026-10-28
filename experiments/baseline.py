@@ -338,6 +338,12 @@ def parse_args() -> argparse.Namespace:
         help="Optionally evaluate only the first N examples.",
     )
     parser.add_argument(
+        "--offset",
+        type=int,
+        default=0,
+        help="Start at this zero-based dataset index (default: 0).",
+    )
+    parser.add_argument(
         "--max-new-tokens",
         type=int,
         default=64,
@@ -348,6 +354,11 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=42,
         help="Random seed used for generation (default: 42).",
+    )
+    parser.add_argument(
+        "--seed-per-example",
+        action="store_true",
+        help="Seed each example with seed plus its dataset index for shard-safe runs.",
     )
     parser.add_argument(
         "--output-dir",
@@ -363,6 +374,8 @@ def main() -> None:
         raise ValueError("--top-k должен быть больше нуля")
     if args.limit is not None and args.limit <= 0:
         raise ValueError("--limit должен быть больше нуля")
+    if args.offset < 0:
+        raise ValueError("--offset не может быть отрицательным")
     if args.max_new_tokens <= 0:
         raise ValueError("--max-new-tokens должен быть больше нуля")
 
@@ -375,8 +388,11 @@ def main() -> None:
         )
 
     dataset, document_index, document_embeddings, documents = load_retrieval_data(settings)
-    if args.limit is not None:
-        dataset = dataset.select(range(min(args.limit, len(dataset))))
+    end_index = min(
+        args.offset + args.limit if args.limit is not None else len(dataset),
+        len(dataset),
+    )
+    dataset = dataset.select(range(args.offset, end_index))
     examples = list(dataset)
     if not examples:
         raise ValueError("В выбранном наборе данных нет примеров для оценки")
@@ -444,6 +460,9 @@ def main() -> None:
     with predictions_path.open("w", encoding="utf-8") as predictions_file:
         for row_number, retrieved_example in enumerate(retrieved_examples, start=1):
             example = retrieved_example["example"]
+            example_index = args.offset + row_number - 1
+            if args.seed_per_example:
+                set_seed(args.seed + example_index)
             prediction, prompt_tokens, generated_tokens, elapsed_seconds = generate_answer(
                 generator_model,
                 generator_tokenizer,
@@ -457,6 +476,7 @@ def main() -> None:
 
             result = {
                 "id": example["id"],
+                "example_index": example_index,
                 "question": example["question"],
                 "reference_answer": example["answer"],
                 "prediction": prediction,
@@ -504,6 +524,8 @@ def main() -> None:
             "revision": settings.dataset_raw.revision,
             "config": settings.dataset_raw.name,
             "split": settings.dataset_raw.split,
+            "start_index": args.offset,
+            "end_index_exclusive": end_index,
             "examples_evaluated": len(examples),
         },
         "retrieval": {
@@ -527,6 +549,7 @@ def main() -> None:
             "thinking_enabled": False,
             "max_new_tokens": args.max_new_tokens,
             "seed": args.seed,
+            "seed_per_example": args.seed_per_example,
             "sampling": {
                 "do_sample": True,
                 "temperature": 0.7,

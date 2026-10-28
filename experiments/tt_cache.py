@@ -12,16 +12,50 @@ import tt
 from transformers.cache_utils import Cache, CacheLayerMixin
 
 
+class Int8TTBlock:
+    """Symmetrically quantized TT cores with per-core float32 scales."""
+
+    def __init__(self, cores: list[np.ndarray]) -> None:
+        self.cores: list[np.ndarray] = []
+        self.scales: list[np.float32] = []
+        for core in cores:
+            max_abs = float(np.max(np.abs(core)))
+            scale = np.float32(max_abs / 127.0 if max_abs else 1.0)
+            self.cores.append(
+                np.clip(np.rint(core / scale), -127, 127).astype(np.int8)
+            )
+            self.scales.append(scale)
+        self.r = np.asarray(
+            [self.cores[0].shape[0]]
+            + [core.shape[-1] for core in self.cores],
+            dtype=np.int64,
+        )
+
+    @property
+    def storage_bytes(self) -> int:
+        return sum(core.nbytes for core in self.cores) + 4 * len(self.scales)
+
+    def full(self) -> np.ndarray:
+        cores = [
+            core.astype(np.float32) * scale
+            for core, scale in zip(self.cores, self.scales)
+        ]
+        return tt.vector(cores).full()
+
+
 class TTCompressedCacheLayer(CacheLayerMixin):
     """Store KV in TT blocks and return dense tensors to attention."""
 
     is_sliding = False
     is_croppable = False
 
-    def __init__(self, epsilon: float, block_size: int) -> None:
+    def __init__(
+        self, epsilon: float, block_size: int, core_quantization: str = "none"
+    ) -> None:
         super().__init__()
         self.epsilon = epsilon
         self.block_size = block_size
+        self.core_quantization = core_quantization
         self.key_blocks: list[Any] = []
         self.value_blocks: list[Any] = []
         self.tail_keys: torch.Tensor | None = None
@@ -172,10 +206,15 @@ class TTCompressedCacheLayer(CacheLayerMixin):
 
         started_at = time.perf_counter()
         compressed = tt.vector(states_array, eps=self.epsilon)
+        block = (
+            Int8TTBlock(compressed.cores)
+            if self.core_quantization == "int8"
+            else compressed
+        )
         self.tt_decomposition_seconds += time.perf_counter() - started_at
 
         started_at = time.perf_counter()
-        reconstructed = compressed.full()
+        reconstructed = block.full()
         self.tt_reconstruction_seconds += time.perf_counter() - started_at
 
         original_norm = float(np.linalg.norm(states_array))
@@ -183,7 +222,7 @@ class TTCompressedCacheLayer(CacheLayerMixin):
             np.linalg.norm(states_array - reconstructed)
             / max(original_norm, np.finfo(np.float32).tiny)
         )
-        return (compressed, reconstructed), reconstruction_error
+        return (block, reconstructed), reconstruction_error
 
     def _materialize(
         self,
@@ -258,9 +297,12 @@ class TTCompressedCacheLayer(CacheLayerMixin):
 
     def get_statistics(self) -> dict[str, int | float]:
         tt_core_bytes = sum(
-            int(core.nbytes)
+            int(
+                block.storage_bytes
+                if isinstance(block, Int8TTBlock)
+                else sum(core.nbytes for core in block.cores)
+            )
             for block in (*self.key_blocks, *self.value_blocks)
-            for core in block.cores
         )
         dense_tail_bytes = 0
         if self.tail_keys is not None:
@@ -310,6 +352,7 @@ class TTCompressedCache(Cache):
         config: Any,
         epsilon: float,
         block_size: int,
+        core_quantization: str = "none",
     ) -> None:
         decoder_config = config.get_text_config(decoder=True)
         num_layers = decoder_config.num_hidden_layers
@@ -326,9 +369,11 @@ class TTCompressedCache(Cache):
             raise ValueError("TT epsilon должен быть между 0 и 1")
         if block_size <= 0:
             raise ValueError("Размер TT-блока должен быть больше нуля")
+        if core_quantization not in {"none", "int8"}:
+            raise ValueError("Поддерживается только none или int8 для TT-ядер")
 
         layers = [
-            TTCompressedCacheLayer(epsilon, block_size)
+            TTCompressedCacheLayer(epsilon, block_size, core_quantization)
             for _ in range(num_layers)
         ]
         super().__init__(layers=layers)
