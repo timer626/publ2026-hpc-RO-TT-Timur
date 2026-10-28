@@ -90,8 +90,13 @@ def parse_args() -> argparse.Namespace:
         help="Generated KV tokens per TT block (default: 16).",
     )
     parser.add_argument(
+        "--tt-prefill-block-size",
+        type=int,
+        help="Optional separate TT block size for prompt prefill.",
+    )
+    parser.add_argument(
         "--tt-core-quantization",
-        choices=("none", "int8"),
+        choices=("none", "int8", "int8_row"),
         default="none",
         help="Optional TT-core storage quantization (default: none).",
     )
@@ -113,6 +118,7 @@ def generate_answer_with_tt_cache(
     tt_epsilon: float,
     tt_block_size: int,
     tt_core_quantization: str,
+    tt_prefill_block_size: int | None,
 ) -> tuple[str, int, int, float, dict[str, int | float]]:
     prompt = build_generation_prompt(tokenizer, question, documents)
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
@@ -122,6 +128,7 @@ def generate_answer_with_tt_cache(
         epsilon=tt_epsilon,
         block_size=tt_block_size,
         core_quantization=tt_core_quantization,
+        prefill_block_size=tt_prefill_block_size,
     )
 
     if device.type == "cuda":
@@ -169,6 +176,8 @@ def validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--tt-epsilon должен быть между 0 и 1")
     if args.tt_block_size <= 0:
         raise ValueError("--tt-block-size должен быть больше нуля")
+    if args.tt_prefill_block_size is not None and args.tt_prefill_block_size <= 0:
+        raise ValueError("--tt-prefill-block-size должен быть больше нуля")
 
 
 def main() -> None:
@@ -278,6 +287,7 @@ def main() -> None:
                 args.tt_epsilon,
                 args.tt_block_size,
                 args.tt_core_quantization,
+                args.tt_prefill_block_size,
             )
             answer_metrics = evaluate_answer(prediction, example["answer"])
             retrieval_metrics = retrieved_example["retrieval_metrics"]
@@ -445,6 +455,7 @@ def main() -> None:
             ),
             "epsilon": args.tt_epsilon,
             "generated_token_block_size": args.tt_block_size,
+            "prefill_block_size": args.tt_prefill_block_size or args.tt_block_size,
             "core_quantization": args.tt_core_quantization,
             "storage_policy": (
                 "compress prompt prefill and complete generated-token blocks; "

@@ -13,14 +13,20 @@ from transformers.cache_utils import Cache, CacheLayerMixin
 
 
 class Int8TTBlock:
-    """Symmetrically quantized TT cores with per-core float32 scales."""
+    """Symmetrically quantized TT cores with float32 scales."""
 
-    def __init__(self, cores: list[np.ndarray]) -> None:
+    def __init__(self, cores: list[np.ndarray], per_row: bool = False) -> None:
         self.cores: list[np.ndarray] = []
-        self.scales: list[np.float32] = []
+        self.scales: list[np.float32 | np.ndarray] = []
         for core in cores:
-            max_abs = float(np.max(np.abs(core)))
-            scale = np.float32(max_abs / 127.0 if max_abs else 1.0)
+            if per_row:
+                max_abs = np.max(np.abs(core), axis=(1, 2), keepdims=True)
+                scale = np.where(max_abs > 0, max_abs / 127.0, 1.0).astype(
+                    np.float32
+                )
+            else:
+                max_abs = float(np.max(np.abs(core)))
+                scale = np.float32(max_abs / 127.0 if max_abs else 1.0)
             self.cores.append(
                 np.clip(np.rint(core / scale), -127, 127).astype(np.int8)
             )
@@ -33,7 +39,9 @@ class Int8TTBlock:
 
     @property
     def storage_bytes(self) -> int:
-        return sum(core.nbytes for core in self.cores) + 4 * len(self.scales)
+        return sum(core.nbytes for core in self.cores) + sum(
+            scale.nbytes for scale in self.scales
+        )
 
     def full(self) -> np.ndarray:
         cores = [
@@ -50,11 +58,16 @@ class TTCompressedCacheLayer(CacheLayerMixin):
     is_croppable = False
 
     def __init__(
-        self, epsilon: float, block_size: int, core_quantization: str = "none"
+        self,
+        epsilon: float,
+        block_size: int,
+        core_quantization: str = "none",
+        prefill_block_size: int | None = None,
     ) -> None:
         super().__init__()
         self.epsilon = epsilon
         self.block_size = block_size
+        self.prefill_block_size = prefill_block_size or block_size
         self.core_quantization = core_quantization
         self.key_blocks: list[Any] = []
         self.value_blocks: list[Any] = []
@@ -108,10 +121,12 @@ class TTCompressedCacheLayer(CacheLayerMixin):
             self.lazy_initialization(key_states, value_states)
             reconstructed_keys = None
             reconstructed_values = None
-            for start in range(0, key_states.shape[-2], self.block_size):
-                key_chunk = key_states[..., start : start + self.block_size, :]
+            for start in range(0, key_states.shape[-2], self.prefill_block_size):
+                key_chunk = key_states[
+                    ..., start : start + self.prefill_block_size, :
+                ]
                 value_chunk = value_states[
-                    ..., start : start + self.block_size, :
+                    ..., start : start + self.prefill_block_size, :
                 ]
                 key_reconstruction, key_error = self._compress_block(key_chunk)
                 value_reconstruction, value_error = self._compress_block(value_chunk)
@@ -207,9 +222,12 @@ class TTCompressedCacheLayer(CacheLayerMixin):
         started_at = time.perf_counter()
         compressed = tt.vector(states_array, eps=self.epsilon)
         block = (
-            Int8TTBlock(compressed.cores)
-            if self.core_quantization == "int8"
-            else compressed
+            compressed
+            if self.core_quantization == "none"
+            else Int8TTBlock(
+                compressed.cores,
+                per_row=self.core_quantization == "int8_row",
+            )
         )
         self.tt_decomposition_seconds += time.perf_counter() - started_at
 
@@ -353,6 +371,7 @@ class TTCompressedCache(Cache):
         epsilon: float,
         block_size: int,
         core_quantization: str = "none",
+        prefill_block_size: int | None = None,
     ) -> None:
         decoder_config = config.get_text_config(decoder=True)
         num_layers = decoder_config.num_hidden_layers
@@ -369,11 +388,15 @@ class TTCompressedCache(Cache):
             raise ValueError("TT epsilon должен быть между 0 и 1")
         if block_size <= 0:
             raise ValueError("Размер TT-блока должен быть больше нуля")
-        if core_quantization not in {"none", "int8"}:
-            raise ValueError("Поддерживается только none или int8 для TT-ядер")
+        if prefill_block_size is not None and prefill_block_size <= 0:
+            raise ValueError("Размер TT-блока prefill должен быть больше нуля")
+        if core_quantization not in {"none", "int8", "int8_row"}:
+            raise ValueError("Поддерживается none, int8 или int8_row для TT-ядер")
 
         layers = [
-            TTCompressedCacheLayer(epsilon, block_size, core_quantization)
+            TTCompressedCacheLayer(
+                epsilon, block_size, core_quantization, prefill_block_size
+            )
             for _ in range(num_layers)
         ]
         super().__init__(layers=layers)

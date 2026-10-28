@@ -286,3 +286,21 @@ and generation sweeps remain to be run after that change.
 All results were copied locally before `hpc0n1` and `hpc0n3` were stopped.
 Their `/tmp` model and environment files are ephemeral; the small per-run
 artifacts are also in the Qwarium persistent home directories.
+
+## 2026-10-28 Follow-up implementation
+
+The 300-example profiling data attributes about 10.08 seconds per example to
+TT decomposition and 3.05 seconds to reconstruction. Prompts average 729
+tokens, while answers average 7.3 tokens, so prompt prefill dominates. The
+cache now accepts a separate `prefill_block_size`; generated-token blocks keep
+their original size. An optional `int8_row` mode stores a float32 scale for
+each left-rank slice of each TT core to test whether lower quantization error
+improves answer quality. The shard aggregator checks the prefill size as part
+of TT run compatibility. These are experimental settings; no quality or speed
+improvement has been established for them yet.
+
+The next comparison uses `epsilon=0.1`, generated-token block 8, prefill
+blocks 128 and 256, and `int8` versus `int8_row` on the first 10 questions.
+Promising settings will be checked on a larger matched sample. The Qwarium
+environments on `hpc0n1` and `hpc0n3` are being recreated after their
+ephemeral `/tmp` files were cleared.

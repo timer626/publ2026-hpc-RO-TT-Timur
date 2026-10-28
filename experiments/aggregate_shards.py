@@ -98,7 +98,7 @@ def main() -> None:
             ("dataset", ("repo_id", "revision", "config", "split")),
             ("retrieval", ("top_k", "embedding_model_revision")),
             ("generation", ("revision", "max_new_tokens", "seed", "sampling")),
-            ("kv_cache", ("epsilon", "generated_token_block_size", "core_quantization")),
+            ("kv_cache", ("epsilon", "generated_token_block_size", "prefill_block_size", "core_quantization")),
         ):
             if any(summary[section][key] != reference_tt[section][key] for key in keys):
                 raise ValueError(f"Несовместимые TT shards: {summary['run_id']}")
@@ -132,7 +132,7 @@ def main() -> None:
         "tt_runs": [summary["run_id"] for summary, _ in tt_runs],
         "tt_settings": {
             key: reference_tt["kv_cache"][key]
-            for key in ("epsilon", "generated_token_block_size", "core_quantization")
+            for key in ("epsilon", "generated_token_block_size", "prefill_block_size", "core_quantization")
         },
         "retrieval_mismatches": retrieval_mismatches,
         "baseline": {
