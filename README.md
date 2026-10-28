@@ -154,8 +154,11 @@ PATH1/summary.json PATH2/summary.json --output-dir PATH`. Скрипт пров�
 
 Опубликованные прогоны находятся в `experiments/results/`: сырые предсказания,
 JSON-сводки и графики сохранены по узлам и конфигурациям. Сводка парного
-сравнения 300 вопросов — в `docs/full_300_comparison.json`, ход экспериментов
-и ограничения результатов — в `docs/experiment_log.md`.
+сравнения 300 вопросов — в `docs/full_300_comparison.json`. Повторные
+сравнения с `int8_row` и отдельными prefill-блоками 128 и 64 — в
+`docs/full_300_int8_row_prefill128_comparison.json` и
+`docs/full_300_int8_row_prefill64_comparison.json`. Ход экспериментов и
+ограничения результатов — в `docs/experiment_log.md`.
 
 ## Структура проекта
 

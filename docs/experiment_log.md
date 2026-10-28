@@ -368,5 +368,34 @@ at the chosen seed policy. TT remains 24.7 times slower than baseline in
 generation; its stored payload is smaller, while peak GPU memory remains near
 the dense-cache baseline because attention receives reconstructed K/V.
 
-The 50-question prefill-64 result warrants the same 300-question evaluation;
-that run is in progress with the four baseline shards above.
+The 50-question prefill-64 result warranted the same 300-question evaluation
+with the four baseline shards above. All four TT shards completed; the
+aggregator verified complete, nonoverlapping indices and **zero retrieval
+mismatches**. Exact run IDs and paired intervals are in
+`full_300_int8_row_prefill64_comparison.json`.
+
+| Metric | Matched baseline | TT prefill 64, int8_row |
+| --- | ---: | ---: |
+| Answer EM | 0.4900 | 0.4800 |
+| Answer F1 | 0.6410 | 0.6267 |
+| Mean generation seconds | 0.3523 | 9.6517 |
+| Peak CUDA memory GiB | 15.696 | 15.446 |
+| Persistent cache payload ratio | — | 1.722 |
+| Mean relative reconstruction error | — | 0.0573 |
+
+The paired TT-minus-baseline difference is -0.0100 EM (95% paired bootstrap
+interval [-0.0367, 0.0167]) and -0.0143 F1 (interval [-0.0378, 0.0079]).
+The intervals include zero. Generation remains 27.4 times slower than
+baseline. In a direct paired comparison of both TT runs, prefill 64 minus
+prefill 128 is +0.0050 F1 (95% paired bootstrap interval [-0.0095, 0.0205])
+with identical retrieval lists. This small quality difference is unresolved
+while prefill 128 is faster and compresses the persistent payload more.
+
+Compared descriptively with the earlier 300-question int8/block-8 TT run,
+prefill 128 plus `int8_row` raised F1 from 0.5741 to 0.6218 and reduced mean
+generation time from 14.6675 to 8.6981 s. Retrieval lists across those two
+TT experiments matched on 287 of 300 questions. Their matched baselines were
+close (F1 0.6413 versus 0.6410). This is a useful implementation improvement,
+but the cache still needs a design that avoids repeated CPU TT-SVD and full
+dense reconstruction before it can be considered a practical latency or GPU
+memory optimization.

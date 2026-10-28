@@ -1,0 +1,90 @@
+{
+  "experiment": "per_example_rag_baseline_with_tt_kv_cache",
+  "run_id": "baseline_tt_20261028T204735948950Z",
+  "dataset": {
+    "repo_id": "hotpotqa/hotpot_qa",
+    "revision": "1908d6afbbead072334abe2965f91bd2709910ab",
+    "config": "distractor",
+    "split": "validation[:300]",
+    "start_index": 150,
+    "end_index_exclusive": 225,
+    "examples_evaluated": 75
+  },
+  "retrieval": {
+    "scope": "documents indexed under the current example_id",
+    "top_k": 5,
+    "query_instruction": "Given a question, retrieve the passages from this example that contain evidence needed to answer it.",
+    "embedding_model_repo_id": "Qwen/Qwen3-Embedding-0.6B",
+    "embedding_model_revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+    "query_embedding_seconds": 0.7556495349854231,
+    "search_seconds": 0.0004590502940118313,
+    "recall_at_k": 0.8666666666666667,
+    "precision_at_k": 0.3466666666666667,
+    "all_supporting_documents_retrieved_rate": 0.7333333333333333
+  },
+  "generation": {
+    "model_repo_id": "Qwen/Qwen3-8B",
+    "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "kv_cache_compression": "TT-SVD via ttpy",
+    "thinking_enabled": false,
+    "max_new_tokens": 64,
+    "seed": 42,
+    "seed_per_example": true,
+    "sampling": {
+      "do_sample": true,
+      "temperature": 0.7,
+      "top_p": 0.8,
+      "top_k": 20,
+      "min_p": 0.0
+    },
+    "latency_scope": "model.generate including TT cache updates and reconstruction",
+    "answer_em": 0.4533333333333333,
+    "answer_f1": 0.6286213513581935,
+    "mean_generation_seconds": 9.43075591637753,
+    "generated_tokens_per_second": 0.7054931112975895,
+    "mean_prompt_tokens": 717.4666666666667,
+    "mean_generated_tokens": 6.653333333333333
+  },
+  "kv_cache": {
+    "format": "ttpy TT-vector blocks, one decomposition for each key and value block",
+    "ttpy_version": "2.0.0rc3",
+    "tensor_shape": "batch x key_value_heads x sequence x head_dim",
+    "storage_device": "CPU TT cores; reconstructed dense K/V moved to model device",
+    "byte_accounting": "TT core and dense tail payload; Python overhead excluded",
+    "compression_scope": "persistent cache payload; temporary dense attention tensors are excluded",
+    "epsilon": 0.1,
+    "generated_token_block_size": 8,
+    "prefill_block_size": 64,
+    "core_quantization": "int8_row",
+    "storage_policy": "compress prompt prefill and complete generated-token blocks; keep the newest incomplete block dense",
+    "attention_input": "dense K/V reconstructed from TT blocks",
+    "mean_tt_core_bytes": 61465658.81333333,
+    "mean_dense_tail_bytes": 519045.12,
+    "mean_dense_equivalent_bytes": 106628382.72,
+    "mean_stored_bytes": 61984703.93333333,
+    "mean_compression_ratio": 1.7194333401426585,
+    "mean_relative_reconstruction_error": 0.05734490879343073,
+    "max_relative_reconstruction_error": 0.08345585316419601,
+    "max_tt_rank": 126,
+    "mean_tt_blocks": 430.56,
+    "total_tt_decomposition_seconds": 532.979850593023,
+    "total_tt_reconstruction_seconds": 125.60595453693531
+  },
+  "performance": {
+    "device": "cuda",
+    "query_peak_cuda_memory_gb": 1.4103078842163086,
+    "generation_peak_cuda_memory_gb": 15.437795639038086
+  },
+  "software": {
+    "python": "3.13.16",
+    "torch": "2.14.1+cu132"
+  },
+  "artifacts": {
+    "predictions": "/qwarium/home/p.a.belozerova/tt-rag-kv-results/baseline_tt_20261028T204735948950Z/predictions.jsonl",
+    "plots": {
+      "quality_metrics": "/qwarium/home/p.a.belozerova/tt-rag-kv-results/baseline_tt_20261028T204735948950Z/plots/quality_metrics.png",
+      "generation_metrics": "/qwarium/home/p.a.belozerova/tt-rag-kv-results/baseline_tt_20261028T204735948950Z/plots/generation_metrics.png",
+      "tt_cache_metrics": "/qwarium/home/p.a.belozerova/tt-rag-kv-results/baseline_tt_20261028T204735948950Z/plots/tt_cache_metrics.png"
+    }
+  }
+}
