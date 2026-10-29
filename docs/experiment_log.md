@@ -425,3 +425,22 @@ memory optimization.
   Record end-to-end latency, decode throughput, persistent payload, peak GPU
   memory, and answer quality. Expand only where the pilot shows a useful
   latency or memory tradeoff.
+
+### 2026-10-29 seed-repeat progress
+
+The two additional baseline evaluations are complete. Each used four
+75-question shards on `hpc0n1` and `hpc0n3`, the same retrieval preparation
+(`validation[:300]`, embedding batch 16), `top_k=5`, at most 64 new tokens,
+and per-example seeding. The retrieved document lists match across all three
+base seeds on all 300 questions.
+
+| Base seed | Baseline EM | Baseline F1 | Mean generation seconds |
+| ---: | ---: | ---: | ---: |
+| 42 | 0.4900 | 0.6410 | 0.3523 |
+| 101 | 0.4767 | 0.6303 | 0.4027 |
+| 202 | 0.4933 | 0.6441 | 0.3843 |
+
+The matched TT repeats for seeds 101 and 202 use prefill block 128,
+generated block 8, `epsilon=0.1`, and `int8_row`. Seed 101 is running. The
+analysis in `experiments/aggregate_seed_repeats.py` will report each paired
+difference and a pooled interval resampled by question index across seeds.
