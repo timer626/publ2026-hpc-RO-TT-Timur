@@ -399,3 +399,29 @@ close (F1 0.6413 versus 0.6410). This is a useful implementation improvement,
 but the cache still needs a design that avoids repeated CPU TT-SVD and full
 dense reconstruction before it can be considered a practical latency or GPU
 memory optimization.
+
+## TODO: follow-up after the matched 300-question comparisons
+
+- [ ] **1. Repeat quality measurements across generation seeds.** Run the
+  matched baseline and the selected TT setting (`epsilon=0.1`, generated block
+  8, prefill block 128, `int8_row`) on the same 300 questions with base seeds
+  101 and 202, in addition to the completed seed 42. Use `--seed-per-example`
+  and the same four 75-question ranges; verify identical retrieved documents
+  within every pair. Report EM/F1 and TT-minus-baseline differences for each
+  seed, then summarize variability across the three seeds. Resample question
+  indices jointly across seeds for a pooled paired interval, so repeated
+  answers to one question are not treated as independent examples. Save raw
+  predictions, summaries, and comparison files in Git.
+- [ ] **2. Redesign the cache path around the measured bottlenecks.** Profile
+  prefill TT-SVD, block reconstruction, transfer, and attention separately.
+  Prototype a path that does not reconstruct the entire dense history at every
+  decoding step; measure peak GPU memory and tokens per second against the
+  current implementation and dense baseline. Decide whether the research goal
+  favors compressed CPU storage with chunked attention or a TT-aware attention
+  kernel before implementing the larger change.
+- [ ] **3. Test where compression can amortize.** After the cache-path change,
+  run a small matched pilot with longer prompts (about 2k, 4k, and 8k tokens)
+  and longer continuations (64, 256, and 512 tokens, within model limits).
+  Record end-to-end latency, decode throughput, persistent payload, peak GPU
+  memory, and answer quality. Expand only where the pilot shows a useful
+  latency or memory tradeoff.
