@@ -402,7 +402,7 @@ memory optimization.
 
 ## TODO: follow-up after the matched 300-question comparisons
 
-- [ ] **1. Repeat quality measurements across generation seeds.** Run the
+- [x] **1. Repeat quality measurements across generation seeds.** Run the
   matched baseline and the selected TT setting (`epsilon=0.1`, generated block
   8, prefill block 128, `int8_row`) on the same 300 questions with base seeds
   101 and 202, in addition to the completed seed 42. Use `--seed-per-example`
@@ -441,6 +441,20 @@ base seeds on all 300 questions.
 | 202 | 0.4933 | 0.6441 | 0.3843 |
 
 The matched TT repeats for seeds 101 and 202 use prefill block 128,
-generated block 8, `epsilon=0.1`, and `int8_row`. Seed 101 is running. The
-analysis in `experiments/aggregate_seed_repeats.py` will report each paired
-difference and a pooled interval resampled by question index across seeds.
+generated block 8, `epsilon=0.1`, and `int8_row`. The aggregator verified zero
+retrieval mismatches for every seed and identical question indices 0–299.
+
+| Base seed | Baseline F1 | TT F1 | TT minus baseline F1 |
+| ---: | ---: | ---: | ---: |
+| 42 | 0.6410 | 0.6218 | -0.0193 |
+| 101 | 0.6303 | 0.6135 | -0.0168 |
+| 202 | 0.6441 | 0.6181 | -0.0260 |
+
+Across the three seeds, the mean paired F1 difference is **-0.0207** and the
+seed-level standard deviation is 0.0048. A clustered bootstrap that resamples
+question indices while retaining all three seed outcomes gives the 95% interval
+[-0.0460, 0.0026]. For EM the mean difference is -0.0122 with interval
+[-0.0411, 0.0156]. The direction is consistently negative for F1, but the
+question-cluster interval still includes zero. Payload compression is
+reproducible; the current CPU decomposition and dense reconstruction path
+dominates latency.
