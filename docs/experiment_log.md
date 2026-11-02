@@ -590,3 +590,11 @@ the reconstructed K/V with maximum error `7.6e-6` at 2k–16k tokens. The
 incremental staging peak was 2.82 MiB. Python chunked attention took 0.0148 s
 at 16k tokens versus 0.00084 s for dense attention, so changing block size
 alone does not meet the 2x speed target; a fused GPU kernel remains necessary.
+
+The first Triton fused online-softmax prototype
+(`triton_attention_pilot_h100_v2.json`) ran on GPU-resident K/V at 2k, 8k,
+and 16k tokens. Maximum absolute error against PyTorch SDPA was `6.1e-5`;
+kernel times were 0.00016, 0.00014, and 0.00031 s respectively. This is a
+compute-only result after K/V reconstruction and transfer, so it is not yet
+an end-to-end TT result. The next integration step is to feed reconstructed
+TT blocks directly into this kernel and then remeasure Qwen3 decode.

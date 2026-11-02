@@ -1,0 +1,17 @@
+[
+  {
+    "length": 2048,
+    "fused_seconds": 0.00016214698553085327,
+    "max_absolute_error": 6.103515625e-05
+  },
+  {
+    "length": 8192,
+    "fused_seconds": 0.000139579176902771,
+    "max_absolute_error": 6.103515625e-05
+  },
+  {
+    "length": 16384,
+    "fused_seconds": 0.000309724360704422,
+    "max_absolute_error": 3.0517578125e-05
+  }
+]
