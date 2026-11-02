@@ -1,0 +1,30 @@
+[
+  {
+    "cache": "dense",
+    "question_id": "5a8b57f25542995d1e6f1371",
+    "prompt_target": 2048,
+    "prompt_tokens": 1676,
+    "new_tokens": 64,
+    "actual_new_tokens": 64,
+    "elapsed_seconds": 6.186297637177631,
+    "tokens_per_second": 10.345444683324137,
+    "peak_cuda_memory_gib": 15.716837882995605,
+    "prediction": "Yes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed",
+    "answer_em": 0.0,
+    "answer_f1": 0.0
+  },
+  {
+    "cache": "dense",
+    "question_id": "5a8b57f25542995d1e6f1371",
+    "prompt_target": 4096,
+    "prompt_tokens": 3844,
+    "new_tokens": 64,
+    "actual_new_tokens": 64,
+    "elapsed_seconds": 6.412939767818898,
+    "tokens_per_second": 9.979822408618539,
+    "peak_cuda_memory_gib": 16.20076847076416,
+    "prediction": "Yes. Both Scott Derrickson and Ed Wood were American. Scott Derrickson is described as an American director, screenwriter, and producer, and Ed Wood is described as an American filmmaker, actor, writer, producer, and director. Additionally, the film \"Ed Wood\" is a biographical film about Ed Wood,",
+    "answer_em": 0.0,
+    "answer_f1": 0.0
+  }
+]

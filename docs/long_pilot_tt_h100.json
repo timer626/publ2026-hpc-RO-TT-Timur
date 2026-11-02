@@ -1,0 +1,60 @@
+[
+  {
+    "cache": "tt",
+    "question_id": "5a8b57f25542995d1e6f1371",
+    "prompt_target": 2048,
+    "prompt_tokens": 1676,
+    "new_tokens": 64,
+    "actual_new_tokens": 64,
+    "elapsed_seconds": 52.85575798503123,
+    "tokens_per_second": 1.2108425352281358,
+    "peak_cuda_memory_gib": 15.45972728729248,
+    "prediction": "Yes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed",
+    "answer_em": 0.0,
+    "answer_f1": 0.0,
+    "tt_cache": {
+      "layers": 36,
+      "sequence_length": 1739,
+      "tt_blocks": 756,
+      "tt_core_bytes": 136240536,
+      "dense_tail_bytes": 1032192,
+      "dense_equivalent_bytes": 256425984,
+      "stored_bytes": 137272728,
+      "compression_ratio": 1.8680038470569333,
+      "max_tt_rank": 127,
+      "mean_relative_reconstruction_error": 0.056222798623065784,
+      "max_relative_reconstruction_error": 0.08283748477697372,
+      "tt_decomposition_seconds": 14.972115996759385,
+      "tt_reconstruction_seconds": 32.52790782554075
+    }
+  },
+  {
+    "cache": "tt",
+    "question_id": "5a8b57f25542995d1e6f1371",
+    "prompt_target": 4096,
+    "prompt_tokens": 3844,
+    "new_tokens": 64,
+    "actual_new_tokens": 64,
+    "elapsed_seconds": 111.75558575498872,
+    "tokens_per_second": 0.5726783101500863,
+    "peak_cuda_memory_gib": 15.67287540435791,
+    "prediction": "Yes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed",
+    "answer_em": 0.0,
+    "answer_f1": 0.0,
+    "tt_cache": {
+      "layers": 36,
+      "sequence_length": 3907,
+      "tt_blocks": 1368,
+      "tt_core_bytes": 303928444,
+      "dense_tail_bytes": 1032192,
+      "dense_equivalent_bytes": 576110592,
+      "stored_bytes": 304960636,
+      "compression_ratio": 1.889131002468135,
+      "max_tt_rank": 127,
+      "mean_relative_reconstruction_error": 0.05579998303778001,
+      "max_relative_reconstruction_error": 0.08321220427751541,
+      "tt_decomposition_seconds": 33.40487233386375,
+      "tt_reconstruction_seconds": 72.74953119480051
+    }
+  }
+]

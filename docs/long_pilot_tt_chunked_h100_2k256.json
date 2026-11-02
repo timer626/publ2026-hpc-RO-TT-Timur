@@ -1,0 +1,36 @@
+[
+  {
+    "cache": "tt",
+    "chunked_decode": true,
+    "question_id": "5a8b57f25542995d1e6f1371",
+    "prompt_target": 2048,
+    "prompt_tokens": 1676,
+    "new_tokens": 256,
+    "actual_new_tokens": 256,
+    "elapsed_seconds": 197.80098479706794,
+    "tokens_per_second": 1.2942301589784337,
+    "peak_cuda_memory_gib": 15.45972728729248,
+    "prediction": "Yes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott",
+    "answer_em": 0.0,
+    "answer_f1": 0.0,
+    "tt_cache": {
+      "layers": 36,
+      "sequence_length": 1931,
+      "tt_blocks": 1620,
+      "tt_core_bytes": 155079140,
+      "dense_tail_bytes": 1032192,
+      "dense_equivalent_bytes": 284737536,
+      "stored_bytes": 156111332,
+      "compression_ratio": 1.8239389309675482,
+      "max_tt_rank": 127,
+      "mean_relative_reconstruction_error": 0.05663122760338916,
+      "max_relative_reconstruction_error": 0.08290721476078033,
+      "tt_decomposition_seconds": 18.06110089388676,
+      "tt_reconstruction_seconds": 1.3863229723647237,
+      "device_to_host_seconds": 0.2764405654743314,
+      "host_to_device_seconds": 0.168666914338246,
+      "block_reconstruction_seconds": 0.6757393756415695,
+      "materialization_calls": 72.0
+    }
+  }
+]

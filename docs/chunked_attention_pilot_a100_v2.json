@@ -1,0 +1,42 @@
+[
+  {
+    "length": 512,
+    "block_size": 128,
+    "blocks": 4,
+    "max_absolute_attention_error": 6.103515625e-05,
+    "chunked_seconds": 0.10653176344931126,
+    "dense_attention_seconds": 0.10241218656301498,
+    "chunked_peak_cuda_memory_mib": 8.6064453125,
+    "chunked_incremental_peak_mib": 0.35546875
+  },
+  {
+    "length": 2048,
+    "block_size": 128,
+    "blocks": 16,
+    "max_absolute_attention_error": 0.0,
+    "chunked_seconds": 0.011803673580288887,
+    "dense_attention_seconds": 0.0007036356255412102,
+    "chunked_peak_cuda_memory_mib": 8.98193359375,
+    "chunked_incremental_peak_mib": 0.35546875
+  },
+  {
+    "length": 4096,
+    "block_size": 128,
+    "blocks": 32,
+    "max_absolute_attention_error": 0.0,
+    "chunked_seconds": 0.023245015181601048,
+    "dense_attention_seconds": 0.0005768686532974243,
+    "chunked_peak_cuda_memory_mib": 9.48193359375,
+    "chunked_incremental_peak_mib": 0.35546875
+  },
+  {
+    "length": 8192,
+    "block_size": 128,
+    "blocks": 64,
+    "max_absolute_attention_error": 5.960464477539063e-08,
+    "chunked_seconds": 0.048239524476230145,
+    "dense_attention_seconds": 0.0006054844707250595,
+    "chunked_peak_cuda_memory_mib": 10.48193359375,
+    "chunked_incremental_peak_mib": 0.35546875
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "cache": "dense",
+    "question_id": "5a8b57f25542995d1e6f1371",
+    "prompt_target": 2048,
+    "prompt_tokens": 1676,
+    "new_tokens": 256,
+    "actual_new_tokens": 256,
+    "elapsed_seconds": 15.21431411895901,
+    "tokens_per_second": 16.826259665625727,
+    "peak_cuda_memory_gib": 15.716837882995605,
+    "prediction": "Yes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott",
+    "answer_em": 0.0,
+    "answer_f1": 0.0
+  },
+  {
+    "cache": "dense",
+    "question_id": "5a8b57f25542995d1e6f1371",
+    "prompt_target": 2048,
+    "prompt_tokens": 1676,
+    "new_tokens": 512,
+    "actual_new_tokens": 512,
+    "elapsed_seconds": 21.450906478101388,
+    "tokens_per_second": 23.868455187322084,
+    "peak_cuda_memory_gib": 15.71685266494751,
+    "prediction": "Yes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed",
+    "answer_em": 0.0,
+    "answer_f1": 0.0
+  }
+]

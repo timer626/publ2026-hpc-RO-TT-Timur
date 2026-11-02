@@ -1,0 +1,36 @@
+[
+  {
+    "cache": "tt",
+    "chunked_decode": true,
+    "question_id": "5a8b57f25542995d1e6f1371",
+    "prompt_target": 2048,
+    "prompt_tokens": 1676,
+    "new_tokens": 64,
+    "actual_new_tokens": 64,
+    "elapsed_seconds": 53.67586920084432,
+    "tokens_per_second": 1.1923421260403788,
+    "peak_cuda_memory_gib": 15.45972728729248,
+    "prediction": "Yes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed",
+    "answer_em": 0.0,
+    "answer_f1": 0.0,
+    "tt_cache": {
+      "layers": 36,
+      "sequence_length": 1739,
+      "tt_blocks": 756,
+      "tt_core_bytes": 136235112,
+      "dense_tail_bytes": 1032192,
+      "dense_equivalent_bytes": 256425984,
+      "stored_bytes": 137267304,
+      "compression_ratio": 1.8680776596297106,
+      "max_tt_rank": 127,
+      "mean_relative_reconstruction_error": 0.05626169258787755,
+      "max_relative_reconstruction_error": 0.08283748477697372,
+      "tt_decomposition_seconds": 15.175482903374359,
+      "tt_reconstruction_seconds": 1.0880218117963523,
+      "device_to_host_seconds": 0.2521601568441838,
+      "host_to_device_seconds": 0.15814765309914947,
+      "block_reconstruction_seconds": 0.47366201714612544,
+      "materialization_calls": 72.0
+    }
+  }
+]

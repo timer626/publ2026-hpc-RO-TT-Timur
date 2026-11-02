@@ -76,6 +76,10 @@ class TTCompressedCacheLayer(CacheLayerMixin):
         self.sequence_length = 0
         self.tt_decomposition_seconds = 0.0
         self.tt_reconstruction_seconds = 0.0
+        self.device_to_host_seconds = 0.0
+        self.host_to_device_seconds = 0.0
+        self.block_reconstruction_seconds = 0.0
+        self.materialization_calls = 0
         self.relative_errors: list[float] = []
         self.dense_key_numel = 0
 
@@ -115,8 +119,9 @@ class TTCompressedCacheLayer(CacheLayerMixin):
         key_states: torch.Tensor,
         value_states: torch.Tensor,
         *args: Any,
+        materialize: bool = True,
         **kwargs: Any,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None]:
         if not self.is_initialized:
             self.lazy_initialization(key_states, value_states)
             reconstructed_keys = None
@@ -187,6 +192,9 @@ class TTCompressedCacheLayer(CacheLayerMixin):
         self.sequence_length += key_states.shape[-2]
         self.dense_key_numel += key_states.numel()
 
+        if not materialize:
+            return None, None
+
         return (
             self._materialize(self.key_blocks, self.tail_keys, reconstructed_keys),
             self._materialize(self.value_blocks, self.tail_values, reconstructed_values),
@@ -212,12 +220,14 @@ class TTCompressedCacheLayer(CacheLayerMixin):
         self,
         states: torch.Tensor,
     ) -> tuple[tuple[Any, np.ndarray], float]:
+        transfer_started = time.perf_counter()
         states_array = (
             states.detach()
             .to(device="cpu", dtype=torch.float32)
             .contiguous()
             .numpy()
         )
+        self.device_to_host_seconds += time.perf_counter() - transfer_started
 
         started_at = time.perf_counter()
         compressed = tt.vector(states_array, eps=self.epsilon)
@@ -233,7 +243,9 @@ class TTCompressedCacheLayer(CacheLayerMixin):
 
         started_at = time.perf_counter()
         reconstructed = block.full()
-        self.tt_reconstruction_seconds += time.perf_counter() - started_at
+        reconstruction_elapsed = time.perf_counter() - started_at
+        self.tt_reconstruction_seconds += reconstruction_elapsed
+        self.block_reconstruction_seconds += reconstruction_elapsed
 
         original_norm = float(np.linalg.norm(states_array))
         reconstruction_error = float(
@@ -249,6 +261,7 @@ class TTCompressedCacheLayer(CacheLayerMixin):
         latest_reconstruction: np.ndarray | None,
     ) -> torch.Tensor:
         started_at = time.perf_counter()
+        self.materialization_calls += 1
         dense_blocks = []
         last_block_index = len(blocks) - 1
 
@@ -268,7 +281,9 @@ class TTCompressedCacheLayer(CacheLayerMixin):
 
         dense_states = np.concatenate(dense_blocks, axis=-2)
         dense_tensor = torch.from_numpy(np.ascontiguousarray(dense_states))
+        host_to_device_started = time.perf_counter()
         result = dense_tensor.to(device=self.device, dtype=self.dtype)
+        self.host_to_device_seconds += time.perf_counter() - host_to_device_started
         self.tt_reconstruction_seconds += time.perf_counter() - started_at
         return result
 
@@ -289,6 +304,10 @@ class TTCompressedCacheLayer(CacheLayerMixin):
         self.sequence_length = 0
         self.tt_decomposition_seconds = 0.0
         self.tt_reconstruction_seconds = 0.0
+        self.device_to_host_seconds = 0.0
+        self.host_to_device_seconds = 0.0
+        self.block_reconstruction_seconds = 0.0
+        self.materialization_calls = 0
         self.relative_errors.clear()
         self.dense_key_numel = 0
         self.is_initialized = False
@@ -359,6 +378,10 @@ class TTCompressedCacheLayer(CacheLayerMixin):
             ),
             "tt_decomposition_seconds": self.tt_decomposition_seconds,
             "tt_reconstruction_seconds": self.tt_reconstruction_seconds,
+            "device_to_host_seconds": self.device_to_host_seconds,
+            "host_to_device_seconds": self.host_to_device_seconds,
+            "block_reconstruction_seconds": self.block_reconstruction_seconds,
+            "materialization_calls": self.materialization_calls,
         }
 
 
@@ -458,4 +481,13 @@ class TTCompressedCache(Cache):
                 float(layer["tt_reconstruction_seconds"])
                 for layer in layer_statistics
             ),
+            **{
+                name: sum(float(layer[name]) for layer in layer_statistics)
+                for name in (
+                    "device_to_host_seconds",
+                    "host_to_device_seconds",
+                    "block_reconstruction_seconds",
+                    "materialization_calls",
+                )
+            },
         }

@@ -412,7 +412,7 @@ memory optimization.
   indices jointly across seeds for a pooled paired interval, so repeated
   answers to one question are not treated as independent examples. Save raw
   predictions, summaries, and comparison files in Git.
-- [ ] **2. Redesign the cache path around the measured bottlenecks.** Profile
+- [x] **2. Redesign the cache path around the measured bottlenecks.** Profile
   prefill TT-SVD, block reconstruction, transfer, and attention separately.
   Prototype a path that does not reconstruct the entire dense history at every
   decoding step; measure peak GPU memory and tokens per second against the
@@ -458,3 +458,58 @@ question indices while retaining all three seed outcomes gives the 95% interval
 question-cluster interval still includes zero. Payload compression is
 reproducible; the current CPU decomposition and dense reconstruction path
 dominates latency.
+
+### 2026-11-02: cache path and long-context pilots (items 2 and 3)
+
+The diagnostic four-layer Qwen3 pilot on A100 (`cache_path_pilot_a100_v2.json`)
+measured 4096 prompt + 256 actual continuation tokens at 1.07 s dense versus
+8.38 s TT. TT spent 0.66 s in decomposition and 6.23 s in full history
+reconstruction. Its payload ratio was 3.83; CUDA allocation peaks were 0.073
+GiB dense and 0.057 GiB TT. These absolute times are specific to the small
+diagnostic model.
+
+The chunked decode prototype uses CPU TT blocks, bounded GPU staging and an
+online softmax for a single Qwen3 decode query. The A100 attention microbench
+(`chunked_attention_pilot_a100_v2.json`) matched dense attention over the same
+reconstructed K/V with maximum absolute error 6.1e-5 at 512–8192 tokens. At
+8192 tokens the prototype took 0.048 s versus 0.0006 s for dense attention;
+incremental staging peak was 0.355 MiB with 128-token staging in that bench.
+A small end-to-end Qwen3 smoke generated identical 32 tokens with and without
+chunked decode; with 1024-token staging, it took 0.323 s versus 0.653 s and
+reduced full materialization calls from 256 to 8.
+
+The matched Qwen3-8B H100 latency pilot reused the same retrieved documents
+for one HotpotQA question, repeated to reach the prompt targets. All times
+include generation and cache work; each row is a single run. Forced
+continuations suppress natural EOS, so EM/F1 from these runs are **not**
+interpretable as answer quality.
+
+| Prompt tokens | Actual new | Dense (s) | Original TT (s) | Chunked TT (s) | Dense/TT peak CUDA (GiB) |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1676 | 64 | 6.19 | 52.86 | 53.68 | 15.717 / 15.460 |
+| 3844 | 64 | 6.41 | 111.76 | 117.34 | 16.201 / 15.673 |
+| 8180 | 64 | 5.26 | 256.72 | 258.55 | 17.231 / 16.106 |
+| 1676 | 256 | 15.21 | 194.10 | 197.80 | 15.717 / 15.460 |
+| 1676 | 512 | 21.45 | 373.42 | — | 15.717 / 15.460 |
+
+At 1676/256, original TT used 18,432 full materializations; chunked TT used
+72 (prefill only). The chunked path removed full GPU KV reconstruction in
+single-token decode, but has not improved full-model latency or observed peak
+memory. Qwen3 prefill still materializes K/V. Python block reconstruction and
+staging remain expensive. This points to an accelerator-native, TT-aware
+attention implementation as the next performance investigation; compressed
+CPU storage alone is not enough for this model. The H100 payload ratio was
+about 1.8–1.9, while model weights dominated the reported CUDA peak.
+
+A separate natural-stop quality check used three fixed questions at about 2k
+prompt tokens (`long_pilot_quality_source.jsonl`). Dense, original TT, and
+chunked TT gave identical answers on all three, with EM/F1 2/3 each. Actual continuations
+were 3, 12, and 4 tokens. This is a correctness spot check, not a quality
+estimate. The fixed document repetition is a controlled stress case, not a
+representative long-document retrieval workload. The 4k and 8k chunked runs
+also removed full decode materializations (72 prefill calls each), without
+end-to-end speedup or further observed CUDA peak reduction.
+The reported tokens/s are end-to-end generation throughput, including prefill;
+pure decode throughput was not separately timed. Item 3 remains open for that
+measurement and a representative long-document quality check if a faster
+cache path makes broader tests worthwhile.

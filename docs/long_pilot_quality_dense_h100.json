@@ -1,0 +1,50 @@
+[
+  {
+    "cache": "dense",
+    "chunked_decode": false,
+    "question_id": "5a8b57f25542995d1e6f1371",
+    "prompt_target": 2048,
+    "prompt_tokens": 1676,
+    "new_tokens": 64,
+    "actual_new_tokens": 3,
+    "elapsed_seconds": 0.75665153702721,
+    "tokens_per_second": 3.9648369866353907,
+    "natural_stop": true,
+    "peak_cuda_memory_gib": 15.716837882995605,
+    "prediction": "Yes.",
+    "answer_em": 1.0,
+    "answer_f1": 1.0
+  },
+  {
+    "cache": "dense",
+    "chunked_decode": false,
+    "question_id": "5a8c7595554299585d9e36b6",
+    "prompt_target": 2048,
+    "prompt_tokens": 1718,
+    "new_tokens": 64,
+    "actual_new_tokens": 12,
+    "elapsed_seconds": 0.7357608377933502,
+    "tokens_per_second": 16.30964762406991,
+    "natural_stop": true,
+    "peak_cuda_memory_gib": 15.720090389251709,
+    "prediction": "United States ambassador to Ghana and to Czechoslovakia",
+    "answer_em": 0.0,
+    "answer_f1": 0.0
+  },
+  {
+    "cache": "dense",
+    "chunked_decode": false,
+    "question_id": "5a85ea095542994775f606a8",
+    "prompt_target": 2048,
+    "prompt_tokens": 1611,
+    "new_tokens": 64,
+    "actual_new_tokens": 4,
+    "elapsed_seconds": 0.2777903762180358,
+    "tokens_per_second": 14.39934692647677,
+    "natural_stop": true,
+    "peak_cuda_memory_gib": 15.70151424407959,
+    "prediction": "Animorphs",
+    "answer_em": 1.0,
+    "answer_f1": 1.0
+  }
+]
