@@ -19,7 +19,7 @@ import triton.language as tl
 
 
 @triton.jit
-def _decode_kernel(q, k, v, out, length, dim, kv_heads, query_heads, stride_qh, stride_kl, stride_kh, stride_vl, stride_vh, stride_oh, scale: tl.constexpr, BLOCK_D: tl.constexpr, BLOCK_N: tl.constexpr):
+def _decode_kernel(q, k, v, out, lse, length, dim, kv_heads, query_heads, stride_qh, stride_kl, stride_kh, stride_vl, stride_vh, stride_oh, scale: tl.constexpr, BLOCK_D: tl.constexpr, BLOCK_N: tl.constexpr):
     head = tl.program_id(0)
     offs_d = tl.arange(0, BLOCK_D)
     qv = tl.load(q + head * stride_qh + offs_d, mask=offs_d < dim, other=0.0).to(tl.float32)
@@ -43,18 +43,20 @@ def _decode_kernel(q, k, v, out, length, dim, kv_heads, query_heads, stride_qh, 
         den = den * old_factor + tl.sum(weight, axis=0)
         maxv = new_max
     tl.store(out + head * stride_oh + offs_d, (acc / den).to(tl.float16), mask=offs_d < dim)
+    tl.store(lse + head, maxv + tl.log(den))
 
 
-def fused_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
+def fused_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, *, return_lse: bool = False) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """q [heads,d], k/v [kv_heads,length,d], GQA repeat by head modulo."""
     heads, dim = q.shape
     kv_heads, length, kdim = k.shape
     if kdim != dim or heads % kv_heads:
         raise ValueError("incompatible GQA shapes")
     out = torch.empty_like(q)
+    lse = torch.empty(heads, device=q.device, dtype=torch.float32)
     grid = (heads,)
-    _decode_kernel[grid](q, k, v, out, length, dim, kv_heads, heads, q.stride(0), k.stride(1), k.stride(0), v.stride(1), v.stride(0), out.stride(0), 1 / math.sqrt(dim), BLOCK_D=triton.next_power_of_2(dim), BLOCK_N=128, num_warps=4)
-    return out
+    _decode_kernel[grid](q, k, v, out, lse, length, dim, kv_heads, heads, q.stride(0), k.stride(1), k.stride(0), v.stride(1), v.stride(0), out.stride(0), 1 / math.sqrt(dim), BLOCK_D=triton.next_power_of_2(dim), BLOCK_N=128, num_warps=4)
+    return (out, lse) if return_lse else out
 
 
 def main() -> None:

@@ -57,6 +57,7 @@ def main() -> None:
     parser.add_argument("--new-tokens", type=int, nargs="+", default=[64, 256])
     parser.add_argument("--cache", choices=["dense", "tt"], required=True)
     parser.add_argument("--chunked-decode", action="store_true")
+    parser.add_argument("--triton-streaming", action="store_true")
     parser.add_argument("--natural-stop", action="store_true")
     parser.add_argument("--questions", type=int, default=1)
     parser.add_argument("--distinct-fill", action="store_true")
@@ -66,10 +67,12 @@ def main() -> None:
     model = AutoModelForCausalLM.from_pretrained(
         settings.generator.local_dir, local_files_only=True, dtype="auto"
     ).cuda().eval()
+    if args.triton_streaming and not args.chunked_decode:
+        raise ValueError("--triton-streaming requires --chunked-decode")
     if args.chunked_decode:
         if args.cache != "tt":
             raise ValueError("Chunked decode requires --cache tt")
-        install_chunked_tt_decode(model)
+        install_chunked_tt_decode(model, triton_streaming=args.triton_streaming)
     if args.questions < 1:
         raise ValueError("--questions must be positive")
     rows = [json.loads(line) for line in args.source.read_text().splitlines()[:args.questions]]
@@ -110,6 +113,7 @@ def main() -> None:
             result = {
                 "cache": args.cache,
                 "chunked_decode": args.chunked_decode,
+                "triton_streaming": args.triton_streaming,
                 "question_id": row["id"],
                 "prompt_target": target,
                 "prompt_tokens": prompt_length,

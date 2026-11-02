@@ -13,6 +13,7 @@ from transformers.models.qwen3.modeling_qwen3 import (
 )
 
 from experiments.chunked_attention import chunked_tt_attention
+from experiments.triton_streaming_tt import streaming_tt_attention
 from experiments.tt_cache import TTCompressedCache
 
 
@@ -24,7 +25,7 @@ class DenseTailBlock:
         return self.states.float().contiguous().numpy()
 
 
-def install_chunked_tt_decode(model: Any) -> None:
+def install_chunked_tt_decode(model: Any, *, triton_streaming: bool = False) -> None:
     """Patch only single-token TT decode; retain normal Qwen3 prefill."""
     for module in model.modules():
         if not isinstance(module, Qwen3Attention):
@@ -63,12 +64,17 @@ def install_chunked_tt_decode(model: Any) -> None:
             if layer.tail_keys is not None:
                 key_blocks.append(DenseTailBlock(layer.tail_keys))
                 value_blocks.append(DenseTailBlock(layer.tail_values))
-            result = chunked_tt_attention(
-                query,
-                key_blocks,
-                value_blocks,
-                key_value_heads=keys.shape[1],
-            )
+            if triton_streaming:
+                result = streaming_tt_attention(
+                    query.squeeze(0).squeeze(1), key_blocks, value_blocks
+                ).reshape_as(query)
+            else:
+                result = chunked_tt_attention(
+                    query,
+                    key_blocks,
+                    value_blocks,
+                    key_value_heads=keys.shape[1],
+                )
             return self.o_proj(result.reshape(*input_shape, -1).contiguous()), None
 
         module.forward = MethodType(forward, module)

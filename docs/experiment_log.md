@@ -611,3 +611,23 @@ path has no demonstrated end-to-end win. At 16k, the corresponding times were
 0.00042 s (Triton), 0.0558 s (Python chunked), and 1.57 s (TT preparation).
 The next implementation must avoid full materialization and reuse or move TT
 cores onto GPU; the current kernel operates on reconstructed dense K/V.
+
+### 2026-11-03: bounded Triton streaming and full-model decode
+
+The new `streaming_tt_attention` reconstructs CPU TT blocks in groups of up
+to 1024 tokens, stages one group on GPU, and merges each group's Triton
+attention result using log-sum-exp. It never materializes the whole history
+on GPU during decode. In the H100 integration microbench
+(`triton_tt_integration_h100_v3.json`), 8k tokens took 0.0272 s versus
+0.0285 s for the prior Python chunked path; incremental GPU peak was 2.04
+MiB and maximum output error against SDPA over reconstructed K/V was `3.1e-5`.
+
+For one fixed Qwen3-8B forced-continuation question, the new path took 41.48
+s at 1676 prompt + 64 new tokens and 188.56 s at 8180 + 64
+(`long_pilot_tt_triton_streaming_h100_*.json`). Previous Python chunked TT
+took 53.68 and 258.55 s respectively, a 23% and 27% reduction in these
+single runs. Dense took 6.19 and 5.26 s. The generated text matched the
+previous TT path. CUDA peak was effectively unchanged (15.460 and 16.106
+GiB), because prefill still materializes the cache and model weights dominate.
+Forced continuations remain latency tests only; their answer EM/F1 is not
+interpretable. The next bottleneck is repeated CPU TT block reconstruction.

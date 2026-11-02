@@ -15,6 +15,7 @@ import tt
 from experiments.chunked_attention import chunked_tt_attention
 from experiments.tt_cache import Int8TTBlock
 from experiments.triton_attention_pilot import fused_attention
+from experiments.triton_streaming_tt import streaming_tt_attention
 
 
 def main() -> None:
@@ -57,6 +58,13 @@ def main() -> None:
         chunked = chunked_tt_attention(q[None, :, None, :], key_blocks, value_blocks, key_value_heads=4).squeeze(0).squeeze(1)
         torch.cuda.synchronize()
         chunked_seconds = time.perf_counter() - started
+        del keys, values, reconstructed_k, reconstructed_v, dense_k, dense_v
+        torch.cuda.reset_peak_memory_stats()
+        staged_base_bytes = torch.cuda.memory_allocated()
+        started = time.perf_counter()
+        streaming = streaming_tt_attention(q, key_blocks, value_blocks, staging_tokens=1024)
+        torch.cuda.synchronize()
+        streaming_seconds = time.perf_counter() - started
         row = {
             "length": length,
             "block_size": args.block_size,
@@ -64,14 +72,16 @@ def main() -> None:
             "dense_attention_seconds": dense_seconds,
             "triton_attention_seconds": fused_seconds,
             "python_chunked_seconds": chunked_seconds,
+            "triton_streaming_seconds": streaming_seconds,
+            "triton_streaming_incremental_peak_mib": (torch.cuda.max_memory_allocated() - staged_base_bytes) / 1024**2,
             "triton_max_error": float((fused.float() - dense.float()).abs().max()),
             "python_chunked_max_error": float((chunked.float() - dense.float()).abs().max()),
+            "triton_streaming_max_error": float((streaming.float() - dense.float()).abs().max()),
             "tt_payload_bytes": sum(b.storage_bytes for b in key_blocks + value_blocks),
-            "dense_equivalent_bytes": int(keys.numel() * 2 + values.numel() * 2),
+            "dense_equivalent_bytes": int(length * 4 * 128 * 2 * 2),
         }
         rows.append(row)
         print(json.dumps(row), flush=True)
-        del keys, values, reconstructed_k, reconstructed_v, dense_k, dense_v
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(rows, indent=2) + "\n")
 

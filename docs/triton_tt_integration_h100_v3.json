@@ -1,0 +1,47 @@
+[
+  {
+    "length": 2048,
+    "block_size": 256,
+    "tt_reconstruction_seconds": 0.2509552352130413,
+    "dense_attention_seconds": 0.00020165741443634033,
+    "triton_attention_seconds": 0.0002592802047729492,
+    "python_chunked_seconds": 0.011911213397979736,
+    "triton_streaming_seconds": 0.008910000324249268,
+    "triton_streaming_incremental_peak_mib": 2.04052734375,
+    "triton_max_error": 6.103515625e-05,
+    "python_chunked_max_error": 6.103515625e-05,
+    "triton_streaming_max_error": 6.103515625e-05,
+    "tt_payload_bytes": 2357740,
+    "dense_equivalent_bytes": 4194304
+  },
+  {
+    "length": 8192,
+    "block_size": 256,
+    "tt_reconstruction_seconds": 0.7981771193444729,
+    "dense_attention_seconds": 0.00014474987983703613,
+    "triton_attention_seconds": 0.0002903193235397339,
+    "python_chunked_seconds": 0.028478305786848068,
+    "triton_streaming_seconds": 0.027239881455898285,
+    "triton_streaming_incremental_peak_mib": 2.04052734375,
+    "triton_max_error": 3.0517578125e-05,
+    "python_chunked_max_error": 3.0517578125e-05,
+    "triton_streaming_max_error": 3.0517578125e-05,
+    "tt_payload_bytes": 9437896,
+    "dense_equivalent_bytes": 16777216
+  },
+  {
+    "length": 16384,
+    "block_size": 256,
+    "tt_reconstruction_seconds": 1.5727917104959488,
+    "dense_attention_seconds": 0.0001613423228263855,
+    "triton_attention_seconds": 0.00045611336827278137,
+    "python_chunked_seconds": 0.056704696267843246,
+    "triton_streaming_seconds": 0.054639458656311035,
+    "triton_streaming_incremental_peak_mib": 2.04052734375,
+    "triton_max_error": 3.0517578125e-05,
+    "python_chunked_max_error": 3.0517578125e-05,
+    "triton_streaming_max_error": 3.0517578125e-05,
+    "tt_payload_bytes": 18882728,
+    "dense_equivalent_bytes": 33554432
+  }
+]
