@@ -539,3 +539,54 @@ The filler documents make prompts less repetitive than the earlier stress
 case, but ten questions are still only a pilot and do not support a final
 quality claim. Full Qwen3-8B long-context compression still has no useful
 latency tradeoff at this implementation stage.
+
+## Action plan: next research directions
+
+The next work is ordered by expected impact. All comparisons use the same
+Qwen3-8B revision, H100 80 GB, `OPENBLAS_NUM_THREADS=1`,
+`OMP_NUM_THREADS=1`, and three fixed random seeds (`42`, `101`, `202`) where
+sampling is enabled.
+
+### A. Measure cache reuse and amortization
+
+- Prompts: 2048 and 8192 tokens; continuations: 64 and 256 tokens.
+- Number of continuations from one prefixed cache: 1, 4, 16, and 64.
+- Cache variants: dense, current TT (`epsilon=0.1`, `prefill_block=128`,
+  `block_size=8`, `int8_row`), and chunked TT with staging 1024.
+- Report one-time prefill, per-branch decode, total time, peak CUDA memory,
+  stored payload, and answer EM/F1 on at least 100 fixed questions.
+- Promote TT only if total time at 16 branches is below dense and F1 loss is
+  below 0.02; otherwise classify it as a memory-only method.
+
+### B. Replace Python staging with a GPU-resident attention path
+
+- First microbenchmark exact attention over reconstructed blocks at sequence
+  lengths 2048, 8192, and 32768.
+- Compare block sizes 128, 256, and 512; staging groups 512, 1024, and 4096.
+- Measure kernel time, maximum absolute error against dense attention, and
+  incremental GPU memory. Target error is `<=1e-4`; target is at least 2x
+  lower decode time than the current Python chunked path.
+- Then integrate the best configuration into single-token Qwen3 decode.
+
+### C. Adaptive compression and dense tail
+
+- Test `epsilon` in `{0.05, 0.1, 0.2}` and dense tails `{128, 512, 1024}`.
+- Keep recent tokens dense; compress older blocks per layer and per KV head.
+- Run 100-question paired quality checks at 2k and 8k prompts.
+- Keep configurations with F1 loss `<=0.02` and payload reduction `>=1.5x`.
+
+### D. Baselines and final decision
+
+- Compare TT against INT8/FP8 KV, low-rank SVD, token dropping, and a
+  sliding-window cache at matched quality and memory budgets.
+- Stop the acceleration claim if no method beats dense on total time at 8k
+  context or 16 cache branches. Publish the result as a memory/quality study.
+
+### 2026-11-03: first block-size follow-up
+
+The first H100 attention microbenchmark with 256-token TT blocks
+(`chunked_attention_pilot_h100_block256.json`) matched the dense reference over
+the reconstructed K/V with maximum error `7.6e-6` at 2k–16k tokens. The
+incremental staging peak was 2.82 MiB. Python chunked attention took 0.0148 s
+at 16k tokens versus 0.00084 s for dense attention, so changing block size
+alone does not meet the 2x speed target; a fused GPU kernel remains necessary.

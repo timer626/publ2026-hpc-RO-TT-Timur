@@ -1,0 +1,32 @@
+[
+  {
+    "length": 2048,
+    "block_size": 256,
+    "blocks": 8,
+    "max_absolute_attention_error": 3.814697265625e-06,
+    "chunked_seconds": 0.07165159657597542,
+    "dense_attention_seconds": 0.06900937110185623,
+    "chunked_peak_cuda_memory_mib": 35.31640625,
+    "chunked_incremental_peak_mib": 2.8154296875
+  },
+  {
+    "length": 8192,
+    "block_size": 256,
+    "blocks": 32,
+    "max_absolute_attention_error": 7.62939453125e-06,
+    "chunked_seconds": 0.0074100010097026825,
+    "dense_attention_seconds": 0.0006057843565940857,
+    "chunked_peak_cuda_memory_mib": 36.81787109375,
+    "chunked_incremental_peak_mib": 2.81640625
+  },
+  {
+    "length": 16384,
+    "block_size": 256,
+    "blocks": 64,
+    "max_absolute_attention_error": 0.0,
+    "chunked_seconds": 0.014786951243877411,
+    "dense_attention_seconds": 0.0008415877819061279,
+    "chunked_peak_cuda_memory_mib": 38.81787109375,
+    "chunked_incremental_peak_mib": 2.81640625
+  }
+]
