@@ -1,0 +1,38 @@
+[
+  {
+    "length": 2048,
+    "block_size": 256,
+    "tt_reconstruction_seconds": 0.25570840016007423,
+    "dense_attention_seconds": 0.00016209855675697327,
+    "triton_attention_seconds": 0.00017317384481430054,
+    "python_chunked_seconds": 0.011277563869953156,
+    "triton_max_error": 6.103515625e-05,
+    "python_chunked_max_error": 6.103515625e-05,
+    "tt_payload_bytes": 2357740,
+    "dense_equivalent_bytes": 4194304
+  },
+  {
+    "length": 8192,
+    "block_size": 256,
+    "tt_reconstruction_seconds": 0.7895740643143654,
+    "dense_attention_seconds": 0.0001254342496395111,
+    "triton_attention_seconds": 0.00025879964232444763,
+    "python_chunked_seconds": 0.02760782092809677,
+    "triton_max_error": 3.0517578125e-05,
+    "python_chunked_max_error": 3.0517578125e-05,
+    "tt_payload_bytes": 9437896,
+    "dense_equivalent_bytes": 16777216
+  },
+  {
+    "length": 16384,
+    "block_size": 256,
+    "tt_reconstruction_seconds": 1.5655032955110073,
+    "dense_attention_seconds": 0.00016228854656219482,
+    "triton_attention_seconds": 0.0004165545105934143,
+    "python_chunked_seconds": 0.05579192936420441,
+    "triton_max_error": 3.0517578125e-05,
+    "python_chunked_max_error": 3.0517578125e-05,
+    "tt_payload_bytes": 18882728,
+    "dense_equivalent_bytes": 33554432
+  }
+]

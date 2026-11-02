@@ -598,3 +598,16 @@ kernel times were 0.00016, 0.00014, and 0.00031 s respectively. This is a
 compute-only result after K/V reconstruction and transfer, so it is not yet
 an end-to-end TT result. The next integration step is to feed reconstructed
 TT blocks directly into this kernel and then remeasure Qwen3 decode.
+
+### 2026-11-03: TT-to-Triton integration pilot
+
+The integration microbench (`triton_tt_integration_h100_v2.json`) builds
+`int8_row` TT blocks of 256 tokens on CPU, reconstructs K/V on GPU, and calls
+the fused Triton attention kernel. On H100 with 8k tokens and 16 query heads,
+the prepared kernel took 0.00026 s; Python chunked attention took 0.0276 s.
+Both matched SDPA over the same reconstructed K/V within `3.1e-5`.
+TT construction plus full K/V materialization took 0.79 s, however, so this
+path has no demonstrated end-to-end win. At 16k, the corresponding times were
+0.00042 s (Triton), 0.0558 s (Python chunked), and 1.57 s (TT preparation).
+The next implementation must avoid full materialization and reuse or move TT
+cores onto GPU; the current kernel operates on reconstructed dense K/V.
