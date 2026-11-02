@@ -23,13 +23,22 @@ from experiments.tt_cache import TTCompressedCache
 from metrics import evaluate_answer
 
 
-def prompt_near_length(tokenizer, row: dict, target: int) -> tuple[str, int]:
+def prompt_near_length(tokenizer, row: dict, target: int, distinct_fill: bool = False) -> tuple[str, int]:
     documents = row["retrieved_documents"]
     repetitions = 1
     best = build_generation_prompt(tokenizer, row["question"], documents)
     best_length = len(tokenizer(best)["input_ids"])
     if best_length > target:
         raise ValueError(f"Base prompt {best_length} exceeds target {target}")
+    if distinct_fill:
+        for filler in row.get("filler_documents", []):
+            candidate = build_generation_prompt(tokenizer, row["question"], documents + [filler])
+            length = len(tokenizer(candidate)["input_ids"])
+            if length > target:
+                break
+            documents = documents + [filler]
+            best, best_length = candidate, length
+        return best, best_length
     while repetitions < 32:
         repetitions += 1
         candidate = build_generation_prompt(tokenizer, row["question"], documents * repetitions)
@@ -50,6 +59,7 @@ def main() -> None:
     parser.add_argument("--chunked-decode", action="store_true")
     parser.add_argument("--natural-stop", action="store_true")
     parser.add_argument("--questions", type=int, default=1)
+    parser.add_argument("--distinct-fill", action="store_true")
     args = parser.parse_args()
     settings = get_settings(Path(__file__).resolve().parents[1])
     tokenizer = AutoTokenizer.from_pretrained(settings.generator.local_dir, local_files_only=True)
@@ -65,7 +75,7 @@ def main() -> None:
     rows = [json.loads(line) for line in args.source.read_text().splitlines()[:args.questions]]
     results = []
     for row, target in product(rows, args.prompt_targets):
-        prompt, prompt_length = prompt_near_length(tokenizer, row, target)
+        prompt, prompt_length = prompt_near_length(tokenizer, row, target, args.distinct_fill)
         inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
         for new_tokens in args.new_tokens:
             set_seed(42)
@@ -108,6 +118,7 @@ def main() -> None:
                 "elapsed_seconds": elapsed,
                 "tokens_per_second": (generated.shape[-1] - prompt_length) / elapsed,
                 "natural_stop": args.natural_stop,
+                "distinct_fill": args.distinct_fill,
                 "peak_cuda_memory_gib": torch.cuda.max_memory_allocated() / 1024**3,
                 "prediction": answer,
                 **evaluate_answer(answer, row["reference_answer"]),

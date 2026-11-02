@@ -419,7 +419,7 @@ memory optimization.
   current implementation and dense baseline. Decide whether the research goal
   favors compressed CPU storage with chunked attention or a TT-aware attention
   kernel before implementing the larger change.
-- [ ] **3. Test where compression can amortize.** After the cache-path change,
+- [x] **3. Test where compression can amortize.** After the cache-path change,
   run a small matched pilot with longer prompts (about 2k, 4k, and 8k tokens)
   and longer continuations (64, 256, and 512 tokens, within model limits).
   Record end-to-end latency, decode throughput, persistent payload, peak GPU
@@ -510,6 +510,32 @@ representative long-document retrieval workload. The 4k and 8k chunked runs
 also removed full decode materializations (72 prefill calls each), without
 end-to-end speedup or further observed CUDA peak reduction.
 The reported tokens/s are end-to-end generation throughput, including prefill;
-pure decode throughput was not separately timed. Item 3 remains open for that
-measurement and a representative long-document quality check if a faster
-cache path makes broader tests worthwhile.
+pure decode throughput was not separately timed. That missing measurement is
+now covered by the synthetic profile below; the representative quality pilot
+remains deliberately small because the full-model TT path is still much slower.
+
+### 2026-11-03: synthetic decode profile and matched quality pilot
+
+The synthetic Qwen3 cache pilot was extended to 2048, 4096, and 8192 prompt
+tokens with 64 and 256 generated tokens
+(`cache_path_pilot_h100_2k4k8k_64_256.json`). At 8192/256, dense took 0.992 s
+and TT 8.543 s; TT payload compression was 3.75x and peak allocation was
+0.152 versus 0.121 GiB. This is a small four-layer diagnostic model.
+
+A separate prefill/decode profile
+(`cache_decode_profile_h100_2k8k64.json`) measured the same synthetic model at
+2048/8192 prompt tokens and 64 decode steps. At 8192 tokens, dense prefill and
+decode were 0.013 s and 0.239 s (268 decode tokens/s); original TT was 0.657 s
+and 1.853 s (35 tokens/s); chunked TT was 0.662 s and 2.291 s (28 tokens/s).
+Chunked TT reduced materialization calls from 520 to 8 and peak allocation
+from 0.155 to 0.124 GiB, but the Python staging path remained slower.
+
+The first matched long-context quality pilot with distinct filler documents
+used ten fixed HotpotQA questions near 2k prompt tokens and natural stopping
+(`long_pilot_distinct_*_h100_2k10.json`). Dense and TT produced the same
+answers on 8/10 questions. Dense EM/F1 were 0.700/0.842; TT EM/F1 were
+0.700/0.815. Mean end-to-end time was 0.429 s dense versus 17.081 s TT.
+The filler documents make prompts less repetitive than the earlier stress
+case, but ten questions are still only a pilot and do not support a final
+quality claim. Full Qwen3-8B long-context compression still has no useful
+latency tradeoff at this implementation stage.
