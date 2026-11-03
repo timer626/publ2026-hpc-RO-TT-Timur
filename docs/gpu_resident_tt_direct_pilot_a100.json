@@ -1,0 +1,40 @@
+[
+  {
+    "length": 2048,
+    "block_size": 128,
+    "staging_tokens": 1024,
+    "scans": 16,
+    "core_transfer_seconds": 0.01096998481079936,
+    "resident_core_mib": 4.583984375,
+    "gpu_attention_seconds_per_scan": 0.010520038078539073,
+    "cpu_streaming_seconds_per_scan": 0.03356957086361945,
+    "decode_speedup": 3.1910122960582745,
+    "gpu_incremental_peak_mib": 20.79638671875,
+    "max_attention_difference": 0.00006103515625,
+    "max_attention_reference_error": 0.00006103515625,
+    "direct_attention_seconds_per_scan": 0.014344843414922556,
+    "direct_vs_staged_speedup": 0.7333672298991678,
+    "max_direct_reference_error": 0.00006103515625,
+    "max_reconstruction_difference_first_block": 0.0018258094787597656,
+    "max_tt_rank": 128
+  },
+  {
+    "length": 8192,
+    "block_size": 128,
+    "staging_tokens": 1024,
+    "scans": 16,
+    "core_transfer_seconds": 0.03700757306069136,
+    "resident_core_mib": 18.3203125,
+    "gpu_attention_seconds_per_scan": 0.04043708331300877,
+    "cpu_streaming_seconds_per_scan": 0.12314218343817629,
+    "decode_speedup": 3.045278574742332,
+    "gpu_incremental_peak_mib": 26.40771484375,
+    "max_attention_difference": 0.000030517578125,
+    "max_attention_reference_error": 0.00006103515625,
+    "direct_attention_seconds_per_scan": 0.05582478797684113,
+    "direct_vs_staged_speedup": 0.724357131992764,
+    "max_direct_reference_error": 0.000030517578125,
+    "max_reconstruction_difference_first_block": 0.0018258094787597656,
+    "max_tt_rank": 128
+  }
+]

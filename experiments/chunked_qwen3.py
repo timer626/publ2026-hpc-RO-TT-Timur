@@ -14,6 +14,7 @@ from transformers.models.qwen3.modeling_qwen3 import (
 
 from experiments.chunked_attention import chunked_tt_attention
 from experiments.triton_streaming_tt import streaming_tt_attention
+from experiments.gpu_resident_tt import ResidentDenseBlock, ResidentTTBlock, resident_tt_attention
 from experiments.tt_cache import TTCompressedCache
 
 
@@ -25,8 +26,10 @@ class DenseTailBlock:
         return self.states.float().contiguous().numpy()
 
 
-def install_chunked_tt_decode(model: Any, *, triton_streaming: bool = False) -> None:
+def install_chunked_tt_decode(model: Any, *, triton_streaming: bool = False, gpu_resident: bool = False) -> None:
     """Patch only single-token TT decode; retain normal Qwen3 prefill."""
+    if gpu_resident and triton_streaming:
+        raise ValueError("Choose one TT decode path")
     for module in model.modules():
         if not isinstance(module, Qwen3Attention):
             continue
@@ -64,7 +67,26 @@ def install_chunked_tt_decode(model: Any, *, triton_streaming: bool = False) -> 
             if layer.tail_keys is not None:
                 key_blocks.append(DenseTailBlock(layer.tail_keys))
                 value_blocks.append(DenseTailBlock(layer.tail_values))
-            if triton_streaming:
+            if gpu_resident:
+                resident_keys = getattr(layer, "_resident_keys", None)
+                resident_values = getattr(layer, "_resident_values", None)
+                if resident_keys is None:
+                    resident_keys, resident_values = [], []
+                    layer._resident_keys = resident_keys
+                    layer._resident_values = resident_values
+                for block in layer.key_blocks[len(resident_keys):]:
+                    resident_keys.append(ResidentTTBlock.from_cpu(block, query.device))
+                for block in layer.value_blocks[len(resident_values):]:
+                    resident_values.append(ResidentTTBlock.from_cpu(block, query.device))
+                staged_keys = list(resident_keys)
+                staged_values = list(resident_values)
+                if layer.tail_keys is not None:
+                    staged_keys.append(ResidentDenseBlock(layer.tail_keys, query.device))
+                    staged_values.append(ResidentDenseBlock(layer.tail_values, query.device))
+                result = resident_tt_attention(
+                    query.squeeze(0).squeeze(1), staged_keys, staged_values
+                ).reshape_as(query)
+            elif triton_streaming:
                 result = streaming_tt_attention(
                     query.squeeze(0).squeeze(1), key_blocks, value_blocks
                 ).reshape_as(query)

@@ -682,3 +682,31 @@ error. This pilot is preliminary: it did not keep cores resident across scans,
 and its peak included retained dense output blocks. A corrected pilot and
 integration into staged Triton attention are required before an end-to-end
 decode claim.
+
+### 2026-11-03: resident cores, direct attention, and model-path check on A100
+
+The corrected A100 pilot (`docs/gpu_resident_tt_direct_pilot_a100.json`) keeps
+quantized TT cores on GPU across 16 scans. For Qwen3-8B-shaped blocks (8 KV
+heads, dimension 128, 128 tokens), core payload was 4.58 MiB at 2k and 18.32
+MiB at 8k. One-time transfer took 0.011 and 0.037 s. Staged reconstruction
+plus Triton attention took 0.0105 and 0.0404 s per scan, versus 0.0336 and
+0.1231 s for CPU reconstruction plus the same streaming kernel: 3.19x and
+3.05x faster. The peak additional GPU allocation was 20.8 and 26.4 MiB.
+Maximum attention error against SDPA over reconstructed TT blocks was 6.1e-5.
+The first-block dense reconstruction difference (1.83e-3) includes fp16
+rounding; it is not the attention error. A direct TT-core contraction without
+dense K/V blocks was accurate to 6.1e-5 but slower than staged reconstruction:
+0.0143 and 0.0558 s per scan at 2k and 8k.
+
+The four-layer synthetic Qwen3 integration
+(`docs/cache_decode_profile_resident_a100_v2.json`) tests 64 actual decode
+steps with head dimension 32 and TT ranks up to 32. At 8k, decode took 0.374 s
+dense, 4.067 s with CPU TT blocks plus Triton streaming, and 9.427 s with
+resident cores. At 2k, the corresponding times were 0.357, 1.506, and 2.952
+s. For these smaller heads, many GPU contraction launches outweigh saved CPU
+reconstruction. The microbench speedup therefore does not imply a model-level
+speedup. Full Qwen3-8B integration still needs an H100 run with actual ranks;
+the currently available A100 environment has no local Qwen3-8B weights.
+In a separate 16-token paired check at 2k and 8k
+(`docs/cache_decode_profile_resident_correctness_a100.json`), Triton streaming
+and resident-core paths generated identical token sequences at both lengths.

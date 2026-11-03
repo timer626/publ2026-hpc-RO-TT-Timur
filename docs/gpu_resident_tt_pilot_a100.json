@@ -1,0 +1,34 @@
+[
+  {
+    "length": 2048,
+    "block_size": 128,
+    "staging_tokens": 1024,
+    "scans": 16,
+    "core_transfer_seconds": 0.011119524948298931,
+    "resident_core_mib": 4.583984375,
+    "gpu_attention_seconds_per_scan": 0.010122827749000862,
+    "cpu_streaming_seconds_per_scan": 0.030893625516910106,
+    "decode_speedup": 3.051877033071056,
+    "gpu_incremental_peak_mib": 20.79638671875,
+    "max_attention_difference": 0.00006103515625,
+    "max_attention_reference_error": 0.00006103515625,
+    "max_reconstruction_difference_first_block": 0.0018258094787597656,
+    "max_tt_rank": 128
+  },
+  {
+    "length": 8192,
+    "block_size": 128,
+    "staging_tokens": 1024,
+    "scans": 16,
+    "core_transfer_seconds": 0.03070246707648039,
+    "resident_core_mib": 18.3203125,
+    "gpu_attention_seconds_per_scan": 0.0417527305544354,
+    "cpu_streaming_seconds_per_scan": 0.12943610869115219,
+    "decode_speedup": 3.1000633245387146,
+    "gpu_incremental_peak_mib": 26.40771484375,
+    "max_attention_difference": 0.000030517578125,
+    "max_attention_reference_error": 0.00006103515625,
+    "max_reconstruction_difference_first_block": 0.0018258094787597656,
+    "max_tt_rank": 128
+  }
+]

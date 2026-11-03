@@ -8,6 +8,7 @@ for _name in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):
     os.environ[_name] = "1"
 
 import argparse
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -33,6 +34,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--prompt-tokens", type=int, nargs="+", default=[2048, 8192])
     parser.add_argument("--decode-tokens", type=int, default=64)
+    parser.add_argument("--kinds", nargs="+", choices=["dense", "tt", "chunked_tt", "triton_tt", "resident_tt"], default=["dense", "tt", "chunked_tt", "triton_tt", "resident_tt"])
     args = parser.parse_args()
     torch.manual_seed(42)
     config = Qwen3Config(
@@ -48,7 +50,7 @@ def main() -> None:
     rows = []
     for length in args.prompt_tokens:
         tokens = torch.randint(0, config.vocab_size, (1, length), device="cuda")
-        for kind in ("dense", "tt", "chunked_tt"):
+        for kind in args.kinds:
             torch.manual_seed(42)
             model = Qwen3ForCausalLM(config).cuda().eval()
             cache = (
@@ -58,11 +60,17 @@ def main() -> None:
             )
             if kind == "chunked_tt":
                 install_chunked_tt_decode(model)
+            if kind == "triton_tt":
+                install_chunked_tt_decode(model, triton_streaming=True)
+            if kind == "resident_tt":
+                install_chunked_tt_decode(model, gpu_resident=True)
             torch.cuda.reset_peak_memory_stats()
             output, prefill = timed_forward(model, tokens, cache)
             decode = 0.0
             next_token = output.logits[:, -1:].argmax(dim=-1)
+            generated_ids = []
             for _ in range(args.decode_tokens):
+                generated_ids.append(int(next_token.item()))
                 output, elapsed = timed_forward(model, next_token, cache)
                 decode += elapsed
                 next_token = output.logits[:, -1:].argmax(dim=-1)
@@ -74,6 +82,7 @@ def main() -> None:
                 "decode_seconds": decode,
                 "decode_tokens_per_second": args.decode_tokens / decode,
                 "peak_cuda_memory_gib": torch.cuda.max_memory_allocated() / 1024**3,
+                "token_ids_sha256": hashlib.sha256(json.dumps(generated_ids).encode()).hexdigest(),
             }
             if kind != "dense":
                 row["tt_cache"] = cache.get_statistics()
