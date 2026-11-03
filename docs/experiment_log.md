@@ -645,7 +645,7 @@ interpretable. The next bottleneck is repeated CPU TT block reconstruction.
   and TT ranks observed in Qwen3-8B (`<=127`). Target at least 2x lower
   per-block reconstruction and transfer time without raising GPU peak by more
   than 256 MiB at 8k.
-- [ ] **3. Direct TT-aware attention.** Contract K cores with one query to
+- [x] **3. Direct TT-aware attention.** Contract K cores with one query to
   obtain block scores, then contract V cores with softmax weights. Compare
   exact output against attention over reconstructed TT blocks (`<=1e-4`
   maximum absolute error). Measure 2k/8k/16k, ranks 32/64/127, block sizes
@@ -746,3 +746,23 @@ stored-payload compression ratio was about 1.87x/1.90x; it excludes resident
 GPU cores. GPU residency removes much repeated reconstruction time, but the
 full TT path remains 6.9x/26.6x slower than dense at 1676/8180 tokens. This is
 a single question and one timing per configuration, not a variance estimate.
+
+### 2026-11-04: direct TT-aware attention decision
+
+The H100 sweep (`docs/direct_tt_sweep_h100.json`) covers 18 combinations of
+2k/8k/16k tokens, ranks capped at 32/64/127, and block sizes 128/256. Direct
+TT-core contraction took 1.21x–1.77x as long as staged GPU reconstruction plus
+Triton attention in every case (direct/staged speed ratio 0.56–0.83). Maximum
+output error against SDPA over reconstructed TT blocks reached 1.22e-4 in one
+direct case and one staged case, slightly above the 1e-4 target; the outputs
+are fp16 and differ by two fp16 steps at that magnitude.
+
+The real-cache check (`docs/actual_qwen_tt_attention_h100.json`) used the first
+Qwen3-8B layer after prefill of the same fixed question. TT ranks ranged
+18–126 at 1676 tokens and 17–126 at 8180 tokens; median ranks were 49.5 and
+74.5. Direct attention took 0.00723/0.03366 s per scan versus
+0.00495/0.02320 s for staged GPU reconstruction, again slower. Direct output
+error was at most 9.92e-5; staged output error was 1.22e-4 in this check.
+Because direct contraction fails the latency gate and the strict error target
+is not consistently met, it is not integrated into model decode. The staged
+resident-core path remains the selected GPU prototype.

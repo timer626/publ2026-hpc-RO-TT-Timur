@@ -22,14 +22,14 @@ from experiments.triton_streaming_tt import streaming_tt_attention
 from experiments.tt_cache import Int8TTBlock
 
 
-def make_blocks(length: int, block_size: int, heads: int, dim: int) -> tuple[list[Int8TTBlock], list[Int8TTBlock]]:
+def make_blocks(length: int, block_size: int, heads: int, dim: int, rmax: int | None = None) -> tuple[list[Int8TTBlock], list[Int8TTBlock]]:
     rng = np.random.default_rng(42)
     keys, values = [], []
     for start in range(0, length, block_size):
         size = min(block_size, length - start)
         for destination in (keys, values):
             array = rng.standard_normal((1, heads, size, dim), dtype=np.float32)
-            destination.append(Int8TTBlock(tt.vector(array, eps=0.1).cores, per_row=True))
+            destination.append(Int8TTBlock(tt.vector(array, eps=0.1, rmax=rmax).cores, per_row=True))
     return keys, values
 
 
@@ -50,11 +50,12 @@ def main() -> None:
     parser.add_argument("--staging-tokens", type=int, default=1024)
     parser.add_argument("--scans", type=int, default=16)
     parser.add_argument("--direct-scans", type=int, default=3)
+    parser.add_argument("--rmax", type=int)
     args = parser.parse_args()
     torch.manual_seed(42)
     rows = []
     for length in args.lengths:
-        keys, values = make_blocks(length, args.block_size, 8, 128)
+        keys, values = make_blocks(length, args.block_size, 8, 128, args.rmax)
         query = torch.randn(32, 128, device="cuda", dtype=torch.float16)
         torch.cuda.synchronize()
         base_alloc = torch.cuda.memory_allocated()
@@ -88,6 +89,7 @@ def main() -> None:
         reconstructed = rk[0].full(query.dtype).float().cpu().numpy()
         row = {
             "length": length, "block_size": args.block_size,
+            "requested_rmax": args.rmax,
             "staging_tokens": args.staging_tokens, "scans": args.scans,
             "core_transfer_seconds": transfer_seconds,
             "resident_core_mib": resident_alloc / 1024**2,
