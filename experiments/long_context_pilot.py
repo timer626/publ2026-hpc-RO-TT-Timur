@@ -58,6 +58,7 @@ def main() -> None:
     parser.add_argument("--cache", choices=["dense", "tt"], required=True)
     parser.add_argument("--chunked-decode", action="store_true")
     parser.add_argument("--triton-streaming", action="store_true")
+    parser.add_argument("--gpu-resident", action="store_true")
     parser.add_argument("--natural-stop", action="store_true")
     parser.add_argument("--questions", type=int, default=1)
     parser.add_argument("--distinct-fill", action="store_true")
@@ -69,10 +70,14 @@ def main() -> None:
     ).cuda().eval()
     if args.triton_streaming and not args.chunked_decode:
         raise ValueError("--triton-streaming requires --chunked-decode")
+    if args.gpu_resident and not args.chunked_decode:
+        raise ValueError("--gpu-resident requires --chunked-decode")
+    if args.gpu_resident and args.triton_streaming:
+        raise ValueError("Choose one TT decode path")
     if args.chunked_decode:
         if args.cache != "tt":
             raise ValueError("Chunked decode requires --cache tt")
-        install_chunked_tt_decode(model, triton_streaming=args.triton_streaming)
+        install_chunked_tt_decode(model, triton_streaming=args.triton_streaming, gpu_resident=args.gpu_resident)
     if args.questions < 1:
         raise ValueError("--questions must be positive")
     rows = [json.loads(line) for line in args.source.read_text().splitlines()[:args.questions]]
@@ -114,6 +119,7 @@ def main() -> None:
                 "cache": args.cache,
                 "chunked_decode": args.chunked_decode,
                 "triton_streaming": args.triton_streaming,
+                "gpu_resident": args.gpu_resident,
                 "question_id": row["id"],
                 "prompt_target": target,
                 "prompt_tokens": prompt_length,

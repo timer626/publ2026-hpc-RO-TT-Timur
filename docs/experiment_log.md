@@ -640,7 +640,7 @@ interpretable. The next bottleneck is repeated CPU TT block reconstruction.
   and pinned-recent blocks with GPU budgets `0`, `8`, `16`, and `32` MiB.
   Record hit rate, block reconstruction plus transfer time, and peak GPU
   allocation. LRU may thrash when every scan touches every block; measure it.
-- [ ] **2. GPU-resident TT cores.** Transfer quantized cores once, reconstruct
+- [x] **2. GPU-resident TT cores.** Transfer quantized cores once, reconstruct
   only the staged block on GPU, and compare with CPU reconstruction at 2k/8k
   and TT ranks observed in Qwen3-8B (`<=127`). Target at least 2x lower
   per-block reconstruction and transfer time without raising GPU peak by more
@@ -710,3 +710,39 @@ the currently available A100 environment has no local Qwen3-8B weights.
 In a separate 16-token paired check at 2k and 8k
 (`docs/cache_decode_profile_resident_correctness_a100.json`), Triton streaming
 and resident-core paths generated identical token sequences at both lengths.
+
+### 2026-11-04: H100 resident-core and full Qwen3-8B checks
+
+The H100 block pilot (`docs/gpu_resident_tt_direct_pilot_h100.json`) kept TT
+cores resident across 16 scans. At 2k/8k/16k, staged GPU reconstruction plus
+Triton attention took 0.0059/0.0214/0.0430 s per scan, versus
+0.0196/0.0809/0.1548 s for CPU reconstruction plus Triton: 3.30x/3.79x/3.60x
+faster. Maximum attention error against SDPA over reconstructed blocks was
+6.1e-5, and additional GPU peak was at most 44.7 MiB. Direct TT-core
+contraction remained slower than staged GPU reconstruction at all lengths.
+
+The small four-layer Qwen3 profile (`docs/cache_decode_profile_resident_h100.json`)
+again showed that the block win does not carry over to its rank-32, dimension-32
+decode: at 8k prompt and 64 decode tokens, resident cores took 5.305 s versus
+2.990 s for CPU TT blocks plus Triton streaming and 0.265 s dense. This
+diagnostic model is not representative of Qwen3-8B's head dimension and ranks.
+
+The paired full-model H100 run used pinned Qwen3-8B revision
+`b968826d9c46dd6066d109eabc6255188de91218`, one fixed HotpotQA question,
+seed 42, 64 forced new tokens, and the same TT settings as the prior long
+pilot. Source artifacts are `docs/full_model_dense_h100.json`,
+`docs/full_model_triton_h100.json`, and `docs/full_model_resident_h100.json`.
+
+| Prompt tokens | Dense (s) | CPU TT + Triton (s) | Resident TT + Triton (s) | Resident vs CPU TT | Resident peak (GiB) |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1676 | 5.00 | 66.71 | 34.49 | 1.93x faster | 15.460 |
+| 8180 | 5.10 | 275.64 | 135.33 | 2.04x faster | 16.106 |
+
+The TT modes produced identical 64-token continuations at both lengths. Dense
+also matched them at 1676 tokens but differed at 8180. Forced continuation
+texts are latency checks, not answer-quality estimates. Peak CUDA allocation
+was the same for both TT modes in this run because prefill dominated. The
+stored-payload compression ratio was about 1.87x/1.90x; it excludes resident
+GPU cores. GPU residency removes much repeated reconstruction time, but the
+full TT path remains 6.9x/26.6x slower than dense at 1676/8180 tokens. This is
+a single question and one timing per configuration, not a variance estimate.

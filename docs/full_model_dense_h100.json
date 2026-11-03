@@ -1,0 +1,26 @@
+[
+  {
+    "mode": "dense",
+    "question_id": "5a8b57f25542995d1e6f1371",
+    "prompt_target": 2048,
+    "prompt_tokens": 1676,
+    "new_tokens": 64,
+    "actual_new_tokens": 64,
+    "elapsed_seconds": 5.003651046004961,
+    "peak_cuda_memory_gib": 15.716837882995605,
+    "continuation_sha256": "82188d411e33f12d92f07f194c9810ce3cca342d8fee134142b5b9e6b3d50281",
+    "prediction": "Yes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed Wood were American.</think>\n\nYes. Both Scott Derrickson and Ed"
+  },
+  {
+    "mode": "dense",
+    "question_id": "5a8b57f25542995d1e6f1371",
+    "prompt_target": 8192,
+    "prompt_tokens": 8180,
+    "new_tokens": 64,
+    "actual_new_tokens": 64,
+    "elapsed_seconds": 5.096444950992009,
+    "peak_cuda_memory_gib": 17.2307710647583,
+    "continuation_sha256": "47948db7333bcb770793605c195a1b142f3c2edef371092db1ed67e0b1d90d3c",
+    "prediction": "Yes. Both Scott Derrickson and Ed Wood were American. Scott Derrickson is described as an American director, screenwriter, and producer, and Ed Wood is described as an American filmmaker, actor, writer, producer, and director. Therefore, they share the same nationality. \n\nAnswer: Yes. Both were American."
+  }
+]
