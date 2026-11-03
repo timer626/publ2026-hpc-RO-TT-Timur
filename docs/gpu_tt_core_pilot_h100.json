@@ -1,0 +1,4 @@
+[
+  {"length":2048,"block_size":128,"blocks":16,"eps":0.1,"cpu_reconstruct_transfer_seconds":0.7579097524,"gpu_core_reconstruct_seconds":0.1395351924,"speedup":5.4316745431,"gpu_peak_mib":37.31298828125,"max_abs_error_first_block":0.0012803078,"max_tt_rank":128,"tt_core_bytes":2369168},
+  {"length":8192,"block_size":128,"blocks":64,"eps":0.1,"cpu_reconstruct_transfer_seconds":3.0428043120,"gpu_core_reconstruct_seconds":0.1648642831,"speedup":18.4564191563,"gpu_peak_mib":49.31298828125,"max_abs_error_first_block":0.0012803078,"max_tt_rank":128,"tt_core_bytes":9476672}
+]

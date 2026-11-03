@@ -631,3 +631,54 @@ previous TT path. CUDA peak was effectively unchanged (15.460 and 16.106
 GiB), because prefill still materializes the cache and model weights dominate.
 Forced continuations remain latency tests only; their answer EM/F1 is not
 interpretable. The next bottleneck is repeated CPU TT block reconstruction.
+
+## TODO: remove repeated TT block reconstruction
+
+- [x] **1. GPU cache feasibility.** On H100, benchmark a Qwen3-8B-shaped
+  single-layer cache (`8` KV heads, head dimension `128`, 8192 prompt tokens,
+  128-token blocks) over 16 sequential decode scans. Compare no cache, LRU,
+  and pinned-recent blocks with GPU budgets `0`, `8`, `16`, and `32` MiB.
+  Record hit rate, block reconstruction plus transfer time, and peak GPU
+  allocation. LRU may thrash when every scan touches every block; measure it.
+- [ ] **2. GPU-resident TT cores.** Transfer quantized cores once, reconstruct
+  only the staged block on GPU, and compare with CPU reconstruction at 2k/8k
+  and TT ranks observed in Qwen3-8B (`<=127`). Target at least 2x lower
+  per-block reconstruction and transfer time without raising GPU peak by more
+  than 256 MiB at 8k.
+- [ ] **3. Direct TT-aware attention.** Contract K cores with one query to
+  obtain block scores, then contract V cores with softmax weights. Compare
+  exact output against attention over reconstructed TT blocks (`<=1e-4`
+  maximum absolute error). Measure 2k/8k/16k, ranks 32/64/127, block sizes
+  128/256, and actual Qwen3-8B ranks. Only integrate into model if its
+  decode latency beats bounded Triton streaming.
+
+### 2026-11-03: GPU block-cache feasibility pilot
+
+The H100 pilot (`docs/gpu_block_cache_pilot_h100.json`) used a Qwen3-8B-shaped
+single-layer cache: 8 KV heads, head dimension 128, 8192 prompt tokens,
+128-token blocks, and 16 sequential full-history scans. Each reconstructed K/V
+block occupied 512 KiB in fp16. With 8 or 16 MiB, an LRU cache had 0% hits
+because a full scan touches all 64 blocks and evicts the oldest entries before
+the next scan. Pinning the most recent blocks gave 23.4% and 46.9% hit rates,
+with elapsed times 0.628 s and 0.436 s versus 0.828 s with no cache. At 32 MiB
+(64 blocks, the complete history), both LRU and pinned-recent reached 93.75%
+hits and about 0.054 s total versus 0.828 s without caching. The result supports
+caching only when the budget can hold the full active history; small LRU budgets
+are ineffective for sequential full-history attention. Peak allocation tracked
+the configured budget (8.5, 16.5, and 32 MiB), so this mechanism stays within
+its explicit budget. The next step is GPU-resident TT-core reconstruction, which
+can reduce the 32 MiB requirement or target workloads with partial-history scans.
+
+### 2026-11-03: GPU-resident TT-core reconstruction pilot
+
+The H100 pilot (`docs/gpu_tt_core_pilot_h100.json`) transferred quantized
+`int8_row` TT cores per block and contracted them on GPU for 128-token blocks. Against
+CPU reconstruction followed by fp16 transfer, the GPU path was 5.4x faster at
+2k tokens (0.140 s vs 0.758 s) and 18.5x faster at 8k (0.165 s vs 3.043 s).
+Peak incremental allocation was 37.3 and 49.3 MiB, below the 256 MiB budget.
+The first-block reported error was 1.28e-3; the implementation measured the
+absolute value of the signed maximum, so this is not a valid maximum absolute
+error. This pilot is preliminary: it did not keep cores resident across scans,
+and its peak included retained dense output blocks. A corrected pilot and
+integration into staged Triton attention are required before an end-to-end
+decode claim.
